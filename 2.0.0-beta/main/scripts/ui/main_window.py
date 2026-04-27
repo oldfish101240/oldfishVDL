@@ -4,8 +4,6 @@
 主視窗模組
 """
 
-print("main_window.py is starting...")
-
 import os
 import sys
 
@@ -16,10 +14,10 @@ root_dir = os.path.dirname(parent_dir)  # main
 if root_dir not in sys.path:
     sys.path.insert(0, root_dir)
 
-from PySide6.QtWidgets import QApplication, QMainWindow, QSystemTrayIcon, QStyle
+from PySide6.QtWidgets import QApplication, QMainWindow, QSystemTrayIcon, QStyle, QMessageBox
 from PySide6.QtWebEngineWidgets import QWebEngineView
 from PySide6.QtWebChannel import QWebChannel
-from PySide6.QtCore import QUrl
+from PySide6.QtCore import QUrl, QSettings
 from PySide6.QtGui import QIcon
 from scripts.core.api import Api
 from scripts.config.constants import APP_NAME, WINDOW_WIDTH, WINDOW_HEIGHT
@@ -41,6 +39,7 @@ class MainWindow(QMainWindow):
         """初始化 UI"""
         self.setWindowTitle(APP_NAME)
         self.resize(WINDOW_WIDTH, WINDOW_HEIGHT)
+        self._restore_window_geometry()
         
         # 設定視窗圖示
         icon_path = safe_path_join(get_assets_path(self.root_dir), 'icon.ico')
@@ -358,10 +357,39 @@ class MainWindow(QMainWindow):
         version_check_thread = threading.Thread(target=check_version_in_background, daemon=True)
         version_check_thread.start()
     
+    def _restore_window_geometry(self):
+        """還原上次的視窗位置與大小"""
+        try:
+            settings = QSettings("oldfish", "VideoDownloader")
+            geometry = settings.value("mainWindow/geometry")
+            if geometry and self.restoreGeometry(geometry):
+                main_window_console("已還原上次視窗位置與大小", level=LogLevel.INFO)
+        except Exception as e:
+            main_window_console(f"還原視窗幾何失敗: {e}", level=LogLevel.WARNING)
+
+    def _save_window_geometry(self):
+        """儲存視窗位置與大小"""
+        try:
+            settings = QSettings("oldfish", "VideoDownloader")
+            settings.setValue("mainWindow/geometry", self.saveGeometry())
+            main_window_console("已儲存視窗位置與大小", level=LogLevel.INFO)
+        except Exception as e:
+            main_window_console(f"儲存視窗幾何失敗: {e}", level=LogLevel.WARNING)
+
     def closeEvent(self, event):
         """視窗關閉事件"""
         try:
+            if self.api_instance and self.api_instance.is_ytdlp_update_in_progress():
+                QMessageBox.warning(
+                    self,
+                    "更新進行中",
+                    "請等待更新完成後再結束程式\n以避免更新中斷造成程式損壞。"
+                )
+                main_window_console("偵測到 yt-dlp 更新中，已阻止關閉主視窗", level=LogLevel.WARNING)
+                event.ignore()
+                return
             main_window_console("主視窗即將關閉，正在清理資源...", level=LogLevel.INFO)
+            self._save_window_geometry()
             if self.api_instance:
                 self.api_instance.close_settings()
             event.accept()

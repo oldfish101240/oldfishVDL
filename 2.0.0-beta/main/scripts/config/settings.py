@@ -4,8 +4,6 @@
 設定管理模組
 """
 
-print("settings.py is starting...")
-
 import os
 import sys
 import json

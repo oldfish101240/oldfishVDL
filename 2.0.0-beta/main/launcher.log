@@ -1,0 +1,40 @@
+[2026-04-27 20:03:30] [INFO] launcher start version=2.0.0-beta
+[2026-04-27 20:03:30] [INFO] log path=C:\Users\fish0\Desktop\github_repo\oldfish-Video-Downloader\2.0.0-beta\main\launcher.log
+[2026-04-27 20:03:30] [INFO] app path=C:\Users\fish0\Desktop\github_repo\oldfish-Video-Downloader\2.0.0-beta
+[2026-04-27 20:03:30] [INFO] pythonw path=C:\Users\fish0\Desktop\github_repo\oldfish-Video-Downloader\2.0.0-beta\main\lib\python_embed\pythonw.exe
+[2026-04-27 20:03:30] [INFO] script path=C:\Users\fish0\Desktop\github_repo\oldfish-Video-Downloader\2.0.0-beta\main\main.pyw
+[2026-04-27 20:03:30] [INFO] create process command="C:\Users\fish0\Desktop\github_repo\oldfish-Video-Downloader\2.0.0-beta\main\lib\python_embed\pythonw.exe" "C:\Users\fish0\Desktop\github_repo\oldfish-Video-Downloader\2.0.0-beta\main\main.pyw"
+[2026-04-27 20:03:30] [INFO] vs redist check passed
+[2026-04-27 20:03:36] [INFO] launcher start version=2.0.0-beta
+[2026-04-27 20:03:36] [INFO] log path=C:\Users\fish0\Desktop\github_repo\oldfish-Video-Downloader\2.0.0-beta\main\launcher.log
+[2026-04-27 20:03:36] [INFO] app path=C:\Users\fish0\Desktop\github_repo\oldfish-Video-Downloader\2.0.0-beta
+[2026-04-27 20:03:41] [INFO] blocked by singleton mutex
+[2026-04-27 20:03:43] [INFO] python process exited code=0 elapsed_ms=12375
+[2026-04-27 20:32:38] [INFO] launcher start version=2.0.0-beta
+[2026-04-27 20:32:38] [INFO] log path=C:\Users\fish0\Desktop\github_repo\oldfish-Video-Downloader\2.0.0-beta\main\launcher.log
+[2026-04-27 20:32:38] [INFO] app path=C:\Users\fish0\Desktop\github_repo\oldfish-Video-Downloader\2.0.0-beta
+[2026-04-27 20:32:38] [INFO] pythonw path=C:\Users\fish0\Desktop\github_repo\oldfish-Video-Downloader\2.0.0-beta\main\lib\python_embed\pythonw.exe
+[2026-04-27 20:32:38] [INFO] script path=C:\Users\fish0\Desktop\github_repo\oldfish-Video-Downloader\2.0.0-beta\main\main.pyw
+[2026-04-27 20:32:38] [INFO] create process command="C:\Users\fish0\Desktop\github_repo\oldfish-Video-Downloader\2.0.0-beta\main\lib\python_embed\pythonw.exe" "C:\Users\fish0\Desktop\github_repo\oldfish-Video-Downloader\2.0.0-beta\main\main.pyw"
+[2026-04-27 20:32:38] [INFO] vs redist check passed
+[2026-04-27 20:32:45] [INFO] python process exited code=0 elapsed_ms=7032
+[2026-04-27 21:04:17] [INFO] launcher start version=2.0.0-beta
+[2026-04-27 21:04:17] [INFO] log path=C:\Users\fish0\Desktop\github_repo\oldfish-Video-Downloader\2.0.0-beta\main\launcher.log
+[2026-04-27 21:04:17] [INFO] app path=C:\Users\fish0\Desktop\github_repo\oldfish-Video-Downloader\2.0.0-beta
+[2026-04-27 21:04:17] [INFO] pythonw path=C:\Users\fish0\Desktop\github_repo\oldfish-Video-Downloader\2.0.0-beta\main\lib\python_embed\pythonw.exe
+[2026-04-27 21:04:17] [INFO] script path=C:\Users\fish0\Desktop\github_repo\oldfish-Video-Downloader\2.0.0-beta\main\main.pyw
+[2026-04-27 21:04:17] [INFO] create process command="C:\Users\fish0\Desktop\github_repo\oldfish-Video-Downloader\2.0.0-beta\main\lib\python_embed\pythonw.exe" "C:\Users\fish0\Desktop\github_repo\oldfish-Video-Downloader\2.0.0-beta\main\main.pyw"
+[2026-04-27 21:04:17] [INFO] vs redist check passed
+[2026-04-27 21:04:22] [INFO] python process exited code=0 elapsed_ms=4890
+[2026-04-27 21:34:16] [INFO] launcher start version=2.0.0-beta
+[2026-04-27 21:34:16] [INFO] log path=C:\Users\fish0\Desktop\github_repo\oldfish-Video-Downloader\2.0.0-beta\main\launcher.log
+[2026-04-27 21:34:16] [INFO] app path=C:\Users\fish0\Desktop\github_repo\oldfish-Video-Downloader\2.0.0-beta
+[2026-04-27 21:34:19] [INFO] elevation requested successfully, exiting current process
+[2026-04-27 21:34:19] [INFO] launcher start version=2.0.0-beta
+[2026-04-27 21:34:19] [INFO] log path=C:\Users\fish0\Desktop\github_repo\oldfish-Video-Downloader\2.0.0-beta\main\launcher.log
+[2026-04-27 21:34:19] [INFO] app path=C:\Users\fish0\Desktop\github_repo\oldfish-Video-Downloader\2.0.0-beta
+[2026-04-27 21:34:19] [INFO] pythonw path=C:\Users\fish0\Desktop\github_repo\oldfish-Video-Downloader\2.0.0-beta\main\lib\python_embed\pythonw.exe
+[2026-04-27 21:34:19] [INFO] script path=C:\Users\fish0\Desktop\github_repo\oldfish-Video-Downloader\2.0.0-beta\main\main.pyw
+[2026-04-27 21:34:19] [INFO] create process command="C:\Users\fish0\Desktop\github_repo\oldfish-Video-Downloader\2.0.0-beta\main\lib\python_embed\pythonw.exe" "C:\Users\fish0\Desktop\github_repo\oldfish-Video-Downloader\2.0.0-beta\main\main.pyw" --require-admin  --launcher-elevated
+[2026-04-27 21:34:19] [INFO] vs redist check passed
+[2026-04-27 21:34:29] [INFO] python process exited code=0 elapsed_ms=10031

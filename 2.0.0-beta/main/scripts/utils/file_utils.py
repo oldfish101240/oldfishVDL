@@ -54,11 +54,16 @@ def get_download_path(root_dir, settings_manager):
     """獲取下載路徑，優先使用設定檔中的路徑"""
     try:
         settings = settings_manager.load_settings()
-        custom_path = settings.get('customDownloadPath', '')
+        custom_path = (settings.get('customDownloadPath', '') or '').strip()
         
-        # 如果有自訂路徑且存在，使用自訂路徑
-        if custom_path and os.path.exists(custom_path):
-            return custom_path
+        # 有自訂路徑時嘗試建立資料夾（若已存在則不影響），成功即使用
+        if custom_path:
+            try:
+                os.makedirs(custom_path, exist_ok=True)
+                return custom_path
+            except Exception:
+                # 建立失敗則回退至預設路徑
+                pass
         
         # 否則使用預設路徑
         return safe_path_join(root_dir, 'downloads')

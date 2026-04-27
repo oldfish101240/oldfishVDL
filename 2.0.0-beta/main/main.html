@@ -332,28 +332,68 @@
             align-items: center;
             justify-content: space-between; /* 上下分佈，讓底部輸入區靠底 */
         }
-        .modal-bg {
+        /* 統一彈窗模板（圓角 + 綠色主題 + 淡入淡出 + 模糊遮罩） */
+        :root {
+            --popup-overlay-bg: rgba(7, 14, 12, 0.52);
+            --popup-overlay-blur: 8px;
+            --popup-fade-duration: 0.24s;
+            --popup-radius: 18px;
+            --popup-theme-green: #27ae60;
+            --popup-theme-green-hover: #219150;
+            --popup-theme-green-soft: rgba(39, 174, 96, 0.25);
+            --popup-surface: #1f242b;
+            --popup-surface-border: rgba(39, 174, 96, 0.26);
+            --popup-shadow: 0 16px 44px rgba(0, 0, 0, 0.45);
+        }
+
+        .app-modal-overlay {
             position: fixed;
-            top: 0; left: 0; right: 0; bottom: 0;
-            background: rgba(0,0,0,0.35);
-            z-index: 9999;
+            inset: 0;
             display: none;
             align-items: center;
             justify-content: center;
             opacity: 0;
-            transform: scale(0.95);
-            transition: opacity 0.2s ease, transform 0.2s ease;
+            pointer-events: none;
+            background: var(--popup-overlay-bg);
+            backdrop-filter: blur(var(--popup-overlay-blur));
+            -webkit-backdrop-filter: blur(var(--popup-overlay-blur));
+            transition: opacity var(--popup-fade-duration) var(--ease-smooth);
+        }
+        .app-modal-overlay.show {
+            opacity: 1;
+            pointer-events: auto;
+        }
+        .app-modal-surface {
+            border-radius: var(--popup-radius);
+            border: 1px solid var(--popup-surface-border);
+            box-shadow: var(--popup-shadow);
+            background: var(--popup-surface);
+        }
+
+        /* 所有彈窗保持最上層；影片資訊視窗刻意較低，避免擋到其他彈窗；載入中最高 */
+        .modal-bg,
+        .playlist-modal-bg {
+            z-index: 100000 !important;
+        }
+        #loading-bg {
+            z-index: 110000 !important;
+        }
+        .video-modal-bg {
+            z-index: 9000 !important;
+        }
+        .modal-bg {
+            transform: scale(0.98);
+            transition: opacity var(--popup-fade-duration) var(--ease-smooth), transform var(--popup-fade-duration) var(--ease-smooth);
         }
         .modal-bg.show {
-            display: flex;
             opacity: 1;
             transform: scale(1);
-            animation: scaleIn 0.3s var(--ease-spring);
         }
         .modal {
-            background: #23262f;
-            border-radius: 16px;
-            box-shadow: 0 4px 24px #000a;
+            background: var(--popup-surface);
+            border-radius: var(--popup-radius);
+            border: 1px solid var(--popup-surface-border);
+            box-shadow: var(--popup-shadow);
             padding: 28px 32px 24px 32px;
             min-width: 320px;
             max-width: 90vw;
@@ -363,13 +403,6 @@
             position: relative;
         }
         
-        .modal-icon {
-            position: absolute;
-            left: 24px;
-            top: 24px;
-            width: 32px;
-            height: 32px;
-        }
         .modal-title {
             font-size: 18px;
             font-weight: bold;
@@ -388,7 +421,7 @@
             white-space: pre-line;
         }
         .modal-btn {
-            background: #27ae60;
+            background: var(--popup-theme-green);
             color: #fff;
             border: none;
             border-radius: 8px;
@@ -401,7 +434,7 @@
             align-self: center;
         }
         .modal-btn:hover {
-            background: #219150;
+            background: var(--popup-theme-green-hover);
         }
         
         /* 確認對話框按鈕樣式 */
@@ -413,7 +446,7 @@
         }
         
         .modal-btn-primary {
-            background: #27ae60;
+            background: var(--popup-theme-green);
             color: #fff;
             border: none;
             border-radius: 8px;
@@ -425,13 +458,13 @@
         }
         
         .modal-btn-primary:hover {
-            background: #219150;
+            background: var(--popup-theme-green-hover);
         }
         
         .modal-btn-secondary {
-            background: #6c757d;
-            color: #fff;
-            border: none;
+            background: transparent;
+            color: #9af0bf;
+            border: 1px solid var(--popup-theme-green-soft);
             border-radius: 8px;
             padding: 0 24px;
             height: 38px;
@@ -441,29 +474,22 @@
         }
         
         .modal-btn-secondary:hover {
-            background: #5a6268;
+            background: rgba(39, 174, 96, 0.14);
+            border-color: var(--popup-theme-green);
         }
         .video-modal-bg {
-            position: fixed;
-            top: 0; left: 0; right: 0; bottom: 0;
-            background: rgba(0,0,0,0.35);
-            z-index: 10000;
-            display: none;
-            align-items: center;
-            justify-content: center;
-            opacity: 0;
             transform: scale(0.95);
-            transition: opacity 0.2s ease, transform 0.2s ease;
+            transition: opacity var(--popup-fade-duration) var(--ease-smooth), transform var(--popup-fade-duration) var(--ease-smooth);
         }
         .video-modal-bg.show {
-            display: flex;
             opacity: 1;
             transform: scale(1);
         }
         .video-modal {
-            background: #23262f;
-            border-radius: 16px;
-            box-shadow: 0 4px 24px #000a;
+            background: var(--popup-surface);
+            border-radius: var(--popup-radius);
+            border: 1px solid var(--popup-surface-border);
+            box-shadow: var(--popup-shadow);
             padding: 0;
             min-width: 450px;
             max-width: 90vw;
@@ -593,6 +619,7 @@
             top: 100%;
             left: 0;
             right: 0;
+            box-sizing: border-box;
             background: #23262f;
             border: 1px solid #444;
             border-top: none;
@@ -617,8 +644,8 @@
             border-bottom: none;
         }
         .custom-select-option:hover {
-            background: #2ecc71;
-            color: #fff;
+            background: #3a4150;
+            color: #f3f4f6;
         }
         .custom-select-option.selected {
             background: #2ecc71;
@@ -683,6 +710,23 @@
             background: #ffffff;
             color: #333;
         }
+        body.light-theme .queue-playlist-card {
+            background: #ffffff;
+            color: #333;
+        }
+        body.light-theme .queue-playlist-card-header:hover {
+            background: rgba(0,0,0,0.05);
+        }
+        body.light-theme .queue-playlist-card-title {
+            color: #333;
+        }
+        body.light-theme .queue-playlist-video-item {
+            background: #f5f5f5;
+        }
+        body.light-theme .queue-playlist-video-item.completed {
+            background: #e8f5e9;
+            border-color: rgba(46, 204, 113, 0.5);
+        }
         body.light-theme .custom-select-header {
             background: #ffffff;
             border-color: #ddd;
@@ -699,6 +743,250 @@
         body.light-theme .modal {
             background: #ffffff;
             color: #333;
+        }
+        /* 播放清單重複下載：獨立彈窗（重做） */
+        .playlist-duplicate-overlay {
+            padding: 20px;
+            z-index: 100001 !important;
+            transition: opacity var(--popup-fade-duration) var(--ease-smooth);
+        }
+        .playlist-duplicate-overlay.show {
+            opacity: 1;
+        }
+        .playlist-duplicate-dialog {
+            width: min(720px, 94vw);
+            max-height: min(78vh, 760px);
+            display: flex;
+            flex-direction: column;
+            border: 1px solid #2b3341;
+            border-radius: var(--popup-radius);
+            overflow: hidden;
+            background: #171b24;
+            border-color: var(--popup-surface-border);
+            box-shadow: var(--popup-shadow);
+            transform: translateY(8px) scale(0.98);
+            transition: transform 0.24s var(--ease-spring);
+        }
+        .playlist-duplicate-overlay.show .playlist-duplicate-dialog {
+            transform: translateY(0) scale(1);
+        }
+        .playlist-duplicate-head {
+            padding: 18px 20px 14px;
+            border-bottom: 1px solid #2c3645;
+            background: linear-gradient(180deg, #1a2130 0%, #171b24 100%);
+        }
+        .playlist-duplicate-title {
+            margin: 0;
+            font-size: 18px;
+            font-weight: 700;
+            color: #f8fafc;
+            line-height: 1.3;
+        }
+        .playlist-duplicate-desc {
+            margin: 8px 0 0;
+            font-size: 13px;
+            color: #a9b6cb;
+            line-height: 1.45;
+            white-space: pre-line;
+        }
+        .playlist-duplicate-tools {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 8px;
+            padding: 12px 20px;
+            border-bottom: 1px solid #283244;
+            background: #171f2d;
+        }
+        .playlist-duplicate-tools-left {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+        .playlist-duplicate-master {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 13px;
+            color: #dbe6f7;
+            user-select: none;
+        }
+        .playlist-duplicate-master input[type="checkbox"] {
+            width: 16px;
+            height: 16px;
+            accent-color: #27ae60;
+            cursor: pointer;
+        }
+        .playlist-duplicate-tool-btn {
+            border: 1px solid #2f5a42;
+            background: #1d3227;
+            color: #d8f3e3;
+            border-radius: 8px;
+            padding: 5px 11px;
+            font-size: 12px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .playlist-duplicate-tool-btn:hover {
+            background: #244232;
+            border-color: #3f7556;
+        }
+        .playlist-duplicate-count {
+            font-size: 12px;
+            color: #6ee7a8;
+            white-space: nowrap;
+        }
+        .playlist-duplicate-body {
+            padding: 12px 20px 10px;
+            overflow-y: auto;
+            background: #151922;
+        }
+        .playlist-duplicate-empty {
+            padding: 18px 0 20px;
+            text-align: center;
+            color: #9ca3af;
+            font-size: 13px;
+        }
+        .playlist-duplicate-row {
+            display: flex;
+            align-items: flex-start;
+            gap: 10px;
+            padding: 10px 12px;
+            margin-bottom: 8px;
+            border: 1px solid #303a49;
+            border-radius: 10px;
+            background: #1b2230;
+            cursor: pointer;
+            transition: border-color 0.2s, background 0.2s;
+        }
+        .playlist-duplicate-row:hover {
+            border-color: #4a5c78;
+            background: #212b3b;
+        }
+        .playlist-duplicate-row.active {
+            border-color: #27ae60;
+            background: rgba(39, 174, 96, 0.16);
+        }
+        .playlist-duplicate-checkbox {
+            margin-top: 2px;
+            width: 16px;
+            height: 16px;
+            accent-color: #27ae60;
+            cursor: pointer;
+            flex: 0 0 auto;
+        }
+        .playlist-duplicate-file {
+            min-width: 0;
+            flex: 1;
+        }
+        .playlist-duplicate-file-title {
+            font-size: 14px;
+            font-weight: 600;
+            color: #eef2ff;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+        .playlist-duplicate-file-path {
+            margin-top: 4px;
+            font-size: 12px;
+            color: #94a3b8;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+        .playlist-duplicate-foot {
+            display: flex;
+            align-items: center;
+            justify-content: flex-end;
+            gap: 10px;
+            padding: 14px 20px 18px;
+            border-top: 1px solid #2b3341;
+            background: #171b24;
+        }
+        .playlist-duplicate-btn {
+            border: none;
+            border-radius: 9px;
+            height: 38px;
+            padding: 0 16px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+        }
+        .playlist-duplicate-btn-muted {
+            background: transparent;
+            color: #9af0bf;
+            border: 1px solid var(--popup-theme-green-soft);
+        }
+        .playlist-duplicate-btn-muted:hover {
+            background: rgba(39, 174, 96, 0.14);
+            border-color: var(--popup-theme-green);
+        }
+        .playlist-duplicate-btn-danger {
+            background: var(--popup-theme-green);
+            color: #fff;
+        }
+        .playlist-duplicate-btn-danger:hover {
+            background: var(--popup-theme-green-hover);
+        }
+        body.light-theme .playlist-duplicate-dialog {
+            background: #ffffff;
+            border-color: #d7dbe2;
+            box-shadow: 0 12px 48px rgba(15,23,42,0.25);
+        }
+        body.light-theme .playlist-duplicate-head {
+            background: linear-gradient(180deg, #f8fbff 0%, #ffffff 100%);
+            border-bottom-color: #e5e7eb;
+        }
+        body.light-theme .playlist-duplicate-title {
+            color: #0f172a;
+        }
+        body.light-theme .playlist-duplicate-desc {
+            color: #475569;
+        }
+        body.light-theme .playlist-duplicate-tools {
+            background: #f8fafc;
+            border-bottom-color: #e5e7eb;
+        }
+        body.light-theme .playlist-duplicate-tool-btn {
+            background: #fff;
+            border-color: #cbd5e1;
+            color: #334155;
+        }
+        body.light-theme .playlist-duplicate-master {
+            color: #334155;
+        }
+        body.light-theme .playlist-duplicate-tool-btn:hover {
+            background: #f1f5f9;
+            border-color: #94a3b8;
+        }
+        body.light-theme .playlist-duplicate-count {
+            color: #15803d;
+        }
+        body.light-theme .playlist-duplicate-body {
+            background: #ffffff;
+        }
+        body.light-theme .playlist-duplicate-row {
+            background: #f8fafc;
+            border-color: #dbe2ea;
+        }
+        body.light-theme .playlist-duplicate-row:hover {
+            background: #f0fdf4;
+            border-color: #b7ebc9;
+        }
+        body.light-theme .playlist-duplicate-row.active {
+            background: #e7f8ee;
+            border-color: #6acb91;
+        }
+        body.light-theme .playlist-duplicate-file-title {
+            color: #1f2937;
+        }
+        body.light-theme .playlist-duplicate-file-path {
+            color: #64748b;
+        }
+        body.light-theme .playlist-duplicate-foot {
+            background: #ffffff;
+            border-top-color: #e5e7eb;
         }
         body.light-theme .video-modal {
             background: #ffffff;
@@ -718,7 +1006,7 @@
             padding: 16px 20px;
         }
         .video-modal-btn {
-            background: #27ae60;
+            background: var(--popup-theme-green);
             color: #fff;
             border: none;
             border-radius: 6px;
@@ -736,44 +1024,35 @@
             justify-content: center;
         }
         .video-modal-btn.cancel {
-            background: #444;
-            color: #eee;
+            background: transparent;
+            color: #9af0bf;
+            border: 1px solid var(--popup-theme-green-soft);
         }
         .video-modal-btn:hover {
-            background: #219150;
+            background: var(--popup-theme-green-hover);
         }
         .video-modal-btn.cancel:hover {
-            background: #666;
+            background: rgba(39, 174, 96, 0.14);
+            border-color: var(--popup-theme-green);
         }
 
         /* 播放清單選擇模態視窗樣式 */
         .playlist-modal-bg {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0, 0, 0, 0.85);
-            z-index: 10001;
-            display: none;
-            align-items: center;
-            justify-content: center;
-            opacity: 0;
-            transition: opacity 0.3s ease;
+            transition: opacity var(--popup-fade-duration) var(--ease-smooth);
         }
         .playlist-modal-bg.show {
             opacity: 1;
         }
         .playlist-modal {
-            background: #23262f;
-            border-radius: 16px;
+            background: var(--popup-surface);
+            border-radius: var(--popup-radius);
             width: 90%;
             max-width: 1000px;
             max-height: 85vh;
             display: flex;
             flex-direction: column;
-            box-shadow: 0 8px 32px rgba(0,0,0,0.5);
-            border: 1px solid #444;
+            box-shadow: var(--popup-shadow);
+            border: 1px solid var(--popup-surface-border);
             overflow: hidden;
         }
         .playlist-modal-header {
@@ -787,7 +1066,7 @@
         .playlist-modal-title {
             font-size: 18px;
             font-weight: bold;
-            color: #e5e7eb;
+            color: #9af0bf;
         }
         .playlist-modal-subtitle {
             font-size: 12px;
@@ -809,7 +1088,7 @@
             transition: background 0.2s;
         }
         .playlist-modal-close:hover {
-            background: #2b2e37;
+            background: rgba(39, 174, 96, 0.14);
         }
         .playlist-modal-toolbar {
             padding: 8px 20px;
@@ -821,9 +1100,9 @@
             flex-wrap: wrap;
         }
         .playlist-toolbar-btn {
-            background: #2b2e37;
-            color: #e5e7eb;
-            border: 1px solid #444;
+            background: rgba(39, 174, 96, 0.08);
+            color: #d1fae5;
+            border: 1px solid var(--popup-theme-green-soft);
             border-radius: 6px;
             padding: 6px 12px;
             font-size: 12px;
@@ -831,8 +1110,8 @@
             transition: all 0.2s;
         }
         .playlist-toolbar-btn:hover {
-            background: #2ecc71;
-            border-color: #2ecc71;
+            background: rgba(39, 174, 96, 0.22);
+            border-color: var(--popup-theme-green);
             color: #fff;
         }
         .playlist-toolbar-check {
@@ -1041,16 +1320,20 @@
         .queue-list {
             width: 90%; /* 調整列表寬度 */
             max-width: 800px; /* 最大寬度限制 */
+            margin: 0 auto; /* 置中 */
             display: flex;
             flex-direction: column;
-            align-items: center; /* 讓列表項居中 */
+            align-items: stretch; /* 讓單一影片與播放清單卡片等寬 */
+            padding-top: 20px; /* 第一個卡片上方留空間（在卡片外層） */
             padding-bottom: 110px; /* 下修預留高度，讓列表可視範圍更大 */
         }
 
         .queue-bottom {
             position: sticky; /* 置於主內容底部，不覆蓋左側標籤列 */
             bottom: 0;
-            width: 100%;
+            width: 90%;
+            max-width: 800px;
+            margin: 0 auto; /* 置中，與 queue-list 等寬 */
             display: flex;
             flex-direction: column;
             align-items: center;
@@ -1066,6 +1349,8 @@
             padding: 10px 15px; /* 縮小內邊距 */
             /* margin-bottom: 20px; */ /* 項目間距由分隔線控制 */
             width: 100%;
+            max-width: 100%;
+            box-sizing: border-box;
             display: flex;
             align-items: flex-start; /* 縮圖和文字頂部對齊 */
             box-shadow: 0 4px 12px rgba(0,0,0,0.3);
@@ -1192,11 +1477,10 @@
         }
 
         .queue-separator {
-            width: 95%;
-            max-width: 800px; /* 加長分隔線 */
+            width: 100%;
             height: 1px;
             background-color: #3a3f4a;
-            margin: 0 auto 8px; /* 縮小與輸入區距離 */
+            margin: 0 0 8px; /* 縮小與輸入區距離 */
         }
         .queue-item-actions {
             display: flex;
@@ -1226,6 +1510,169 @@
             height: 24px;
             filter: brightness(0.85);
             transition: filter 0.2s ease;
+        }
+
+        /* 播放清單佇列卡片（與單一影片卡片同風格，可摺疊） */
+        .queue-playlist-card {
+            background: #2b2e37;
+            border-radius: 12px;
+            padding: 0;
+            width: 100%;
+            max-width: 100%;
+            box-sizing: border-box;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+            overflow: hidden;
+            transition: all 0.2s ease;
+        }
+        .queue-playlist-card:hover {
+            box-shadow: 0 6px 16px rgba(0,0,0,0.4);
+        }
+        .queue-playlist-card.completed {
+            border: 2px solid #2ecc71;
+            background: #1e2a24;
+        }
+        .queue-playlist-card-header {
+            display: flex;
+            flex-direction: column;
+            padding: 12px 15px;
+            cursor: pointer;
+            user-select: none;
+            gap: 10px;
+            transition: background 0.2s ease;
+        }
+        .queue-playlist-card-header:hover {
+            background: rgba(255,255,255,0.05);
+        }
+        .queue-playlist-card-header-top {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .queue-playlist-card-header-top .queue-item-actions {
+            margin-left: 0;
+        }
+        .queue-playlist-card-title {
+            font-size: 16px;
+            font-weight: bold;
+            color: #e5e7eb;
+            flex: 1;
+            text-align: left;
+        }
+        .queue-playlist-card-count {
+            font-size: 13px;
+            color: #b0b0b0;
+        }
+        .queue-playlist-card-total-progress {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .queue-playlist-badge {
+            font-size: 12px;
+            color: #b0b0b0;
+            font-weight: 600;
+            flex-shrink: 0;
+        }
+        .queue-playlist-total-bar-wrap {
+            flex: 1;
+            min-width: 0;
+        }
+        .queue-playlist-total-bar-wrap .progress-bar-container {
+            height: 6px;
+            margin: 0;
+        }
+        .queue-playlist-total-pct {
+            font-size: 12px;
+            color: #888;
+            flex-shrink: 0;
+        }
+        .queue-playlist-card-chevron {
+            font-size: 12px;
+            color: #888;
+            display: inline-block;
+            transition: transform 0.2s ease;
+            transform-origin: center;
+        }
+        .queue-playlist-card-body {
+            border-top: 1px solid #3a3f4a;
+            padding: 8px 15px 10px; /* 與 queue-item 同為 15px 側邊距，保持卡片等寬 */
+            max-height: 800px; /* 供展開/收合動畫使用的上限高度 */
+            overflow: hidden;
+            opacity: 1;
+            transform: translateY(0);
+            transition:
+                max-height 0.22s var(--ease-smooth),
+                opacity 0.18s var(--ease-smooth),
+                transform 0.18s var(--ease-smooth),
+                padding-top 0.18s var(--ease-smooth),
+                padding-bottom 0.18s var(--ease-smooth);
+        }
+        .queue-playlist-card-body-collapsed {
+            max-height: 0;
+            opacity: 0;
+            transform: translateY(-4px);
+            padding-top: 0;
+            padding-bottom: 0;
+        }
+        .queue-playlist-video-item {
+            display: flex;
+            align-items: flex-start;
+            background: #23262f;
+            border-radius: 8px;
+            padding: 8px 12px;
+            margin-bottom: 6px;
+            width: 100%;
+            box-sizing: border-box;
+        }
+        .queue-playlist-video-item:last-child {
+            margin-bottom: 0;
+        }
+        .queue-playlist-video-item.completed {
+            border: 1px solid rgba(46, 204, 113, 0.4);
+            background: #1a2520;
+        }
+        .queue-playlist-video-thumb {
+            width: 80px;
+            height: 56px;
+            border-radius: 6px;
+            margin-right: 10px;
+            flex-shrink: 0;
+            background: #181a20;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #b0b0b0;
+            font-size: 11px;
+            text-align: center;
+            overflow: hidden;
+        }
+        .queue-playlist-video-thumb img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            border-radius: 6px;
+        }
+        .queue-playlist-video-item .queue-item-info {
+            min-width: 0;
+        }
+        .queue-playlist-video-item .queue-item-title {
+            font-size: 14px;
+        }
+        .queue-playlist-video-item .queue-item-meta,
+        .queue-playlist-video-item .queue-item-url {
+            font-size: 12px;
+        }
+        .queue-playlist-video-item .progress-bar-container {
+            height: 6px;
+            margin-top: 4px;
+        }
+        .queue-playlist-video-item .progress-text {
+            font-size: 11px;
+            margin-top: 2px;
+        }
+        .queue-playlist-video-item .completed-badge {
+            font-size: 12px;
+            margin-top: 4px;
         }
         
         /* 設定頁面樣式 */
@@ -1282,6 +1729,12 @@
             accent-color: #2ecc71;
             cursor: pointer;
             margin-right: 8px;
+        }
+        .settings-radio {
+            width: 18px;
+            height: 18px;
+            accent-color: #2ecc71;
+            cursor: pointer;
         }
         
         .settings-input {
@@ -1636,6 +2089,22 @@
                             <label class="settings-checkbox-label">
                                 <input type="checkbox" id="enable-notifications" class="settings-checkbox">
                                 <span style="margin-left: 8px;">啟用下載完成通知(實驗性)</span>
+                            </label>
+                        </div>
+                        <div class="settings-item" style="margin-top: 16px;">
+                            <label class="settings-label" style="display: block; margin-bottom: 8px; color: #e5e7eb; font-size: 16px;">
+                                播放清單下載完成的通知時機：
+                            </label>
+                            <div style="display: flex; flex-direction: column; gap: 8px;">
+                                <label class="settings-checkbox-label" style="display: flex; align-items: center;">
+                                    <input type="radio" name="playlist-notification-mode" id="playlist-notify-complete" value="complete" class="settings-radio" style="margin-right: 8px;">
+                                    <span>整個播放清單下載完成時</span>
+                                </label>
+                                <label class="settings-checkbox-label" style="display: flex; align-items: center;">
+                                    <input type="radio" name="playlist-notification-mode" id="playlist-notify-each" value="each" class="settings-radio" style="margin-right: 8px;">
+                                    <span>每下載完一部影片時</span>
+                                </label>
+                            </div>
                         </div>
                     </div>
                     
@@ -1649,7 +2118,7 @@
                         </div>
                         <div class="settings-item">
                             <label class="settings-label" style="display: block; margin-bottom: 8px; color: #e5e7eb; font-size: 16px;">
-                                同時下載上限（建議 3~5）：
+                                同時下載影片數量上限（建議 3~5）：
                             </label>
                             <input type="number" id="max-concurrent-downloads" class="settings-input"
                                    min="1" max="10" step="1"
@@ -1657,14 +2126,14 @@
                         </div>
                         <div class="settings-item">
                             <label class="settings-label" style="display: block; margin-bottom: 8px; color: #e5e7eb; font-size: 16px;">
-                                下載路徑：
+                                自訂下載路徑：
                             </label>
                             <div style="display: flex; gap: 12px; align-items: center;">
                                 <input type="text" id="custom-download-path" class="settings-input" 
-                                       placeholder="請選擇下載路徑" readonly
+                                       placeholder="請輸入下載路徑..."
                                        style="flex: 1; padding: 10px 12px; border: 1px solid #444; border-radius: 8px; background: #1a1d23; color: #e5e7eb; font-size: 14px;">
                                 <button type="button" id="browse-download-path" class="settings-btn-secondary" 
-                                        style="padding: 10px 16px; white-space: nowrap;">
+                                        style="padding: 10px 22px; min-width: 96px; white-space: nowrap;">
                                     瀏覽
                                 </button>
                             </div>
@@ -1697,7 +2166,7 @@
                             作者：老魚oldfish
                         </div>
                         <div class="settings-item" style="margin:16px 0 0 0;">
-                            <a id="about-github" href="#" style="color:#2ecc71; text-decoration:none;">前往 GitHub 專案</a>
+                            <a id="about-github" href="#" style="color:#2ecc71; text-decoration:none;">前往 GitHub 專案頁面</a>
                         </div>
                         <div id="about-footer" style="text-align:center; color:#888; font-size:12px; margin-top:24px;">
                             © 2025 老魚oldfish.
@@ -1714,9 +2183,8 @@
             載入中...
         </div>
     </div>
-    <div class="modal-bg" id="modal-bg">
-        <div class="modal">
-            <img class="modal-icon" src="assets/icon.png" alt="icon">
+    <div class="modal-bg app-modal-overlay" id="modal-bg">
+        <div class="modal app-modal-surface">
             <div class="modal-title" id="modal-title"></div>
             <div class="modal-msg" id="modal-msg"></div>
             <button class="modal-btn" onclick="closeModal()">確定</button>
@@ -1724,9 +2192,8 @@
     </div>
     
     <!-- 確認對話框模態視窗 -->
-    <div class="modal-bg" id="confirm-modal-bg">
-        <div class="modal">
-            <img class="modal-icon" src="assets/icon.png" alt="icon">
+    <div class="modal-bg app-modal-overlay" id="confirm-modal-bg">
+        <div class="modal app-modal-surface">
             <div class="modal-title" id="confirm-modal-title"></div>
             <div class="modal-msg" id="confirm-modal-msg"></div>
             <div class="modal-buttons">
@@ -1735,8 +2202,32 @@
             </div>
         </div>
     </div>
-    <div class="video-modal-bg" id="video-modal-bg">
-        <div class="video-modal" id="video-modal">
+    <div class="playlist-duplicate-overlay app-modal-overlay" id="playlist-duplicate-modal-bg" onclick="if(event.target===this) closePlaylistDuplicateModal();">
+        <div class="playlist-duplicate-dialog app-modal-surface" role="dialog" aria-modal="true" aria-labelledby="playlist-duplicate-title">
+            <div class="playlist-duplicate-head">
+                <h3 class="playlist-duplicate-title" id="playlist-duplicate-title">偵測到已下載內容</h3>
+                <p id="playlist-duplicate-summary" class="playlist-duplicate-desc"></p>
+            </div>
+            <div class="playlist-duplicate-tools">
+                <div class="playlist-duplicate-tools-left">
+                    <label class="playlist-duplicate-master">
+                        <input type="checkbox" id="playlist-duplicate-master-check" onchange="toggleAllPlaylistDuplicatesFromMaster(this.checked)">
+                        <span>全選</span>
+                    </label>
+                </div>
+                <div id="playlist-duplicate-selected" class="playlist-duplicate-count"></div>
+            </div>
+            <div id="playlist-duplicate-list" class="playlist-duplicate-body">
+                <!-- 重複項目列表將動態插入這裡 -->
+            </div>
+            <div class="playlist-duplicate-foot">
+                <button class="playlist-duplicate-btn playlist-duplicate-btn-muted" onclick="closePlaylistDuplicateModal()">取消下載</button>
+                <button class="playlist-duplicate-btn playlist-duplicate-btn-danger" onclick="confirmPlaylistDuplicateAction()">繼續</button>
+            </div>
+        </div>
+    </div>
+    <div class="video-modal-bg app-modal-overlay" id="video-modal-bg">
+        <div class="video-modal app-modal-surface" id="video-modal">
             <div class="video-modal-loading" id="video-modal-loading">載入中...</div>
             <div id="video-modal-content" style="display:none;">
                 <div class="video-modal-header">
@@ -1779,8 +2270,8 @@
     </div>
 
     <!-- 播放清單選擇模態視窗 -->
-    <div class="playlist-modal-bg" id="playlist-modal-bg">
-        <div class="playlist-modal">
+    <div class="playlist-modal-bg app-modal-overlay" id="playlist-modal-bg">
+        <div class="playlist-modal app-modal-surface">
             <div class="playlist-modal-header">
                 <div>
                     <div class="playlist-modal-title" id="playlist-modal-title">播放清單</div>
@@ -1797,7 +2288,7 @@
                     <input type="checkbox" id="playlist-apply-highest-quality" onchange="onPlaylistApplyHighestQualityChanged(this.checked)">
                     套用最高畫質/位元率
                 </label>
-                <div class="playlist-toolbar-select">
+                <div class="playlist-toolbar-select" id="playlist-global-format-card">
                     <div class="playlist-toolbar-select-label">影片格式(一次套用至所有)</div>
                     <div class="custom-select" id="playlist-global-format-select">
                         <div class="custom-select-header" onclick="togglePlaylistGlobalFormatSelect()">
@@ -1823,8 +2314,13 @@
         </div>
     </div>
     <script>
-        // 重定向 console 輸出到 Python 端
+        // 重定向 console 輸出到 Python 端（僅保留必要等級）
         (function() {
+            // 預設只顯示必要訊息：warn/error（可改為 info/debug 以開啟更多訊息）
+            const CONSOLE_MIN_LEVEL = 'warn';
+            const levelPriority = { debug: 10, info: 20, log: 20, warn: 30, error: 40 };
+            const minPriority = levelPriority[CONSOLE_MIN_LEVEL] || levelPriority.warn;
+
             // 保存原始的 console 方法
             const originalConsole = {
                 log: console.log.bind(console),
@@ -1862,8 +2358,13 @@
                 }
             }
             
+            function shouldOutput(level) {
+                return (levelPriority[level] || 0) >= minPriority;
+            }
+
             // 重寫 console 方法
             console.log = function(...args) {
+                if (!shouldOutput('log')) return;
                 originalConsole.log(...args);
                 sendLogToPython('log', args);
             };
@@ -1874,21 +2375,26 @@
             };
             
             console.warn = function(...args) {
+                if (!shouldOutput('warn')) return;
                 originalConsole.warn(...args);
                 sendLogToPython('warn', args);
             };
             
             console.info = function(...args) {
+                if (!shouldOutput('info')) return;
                 originalConsole.info(...args);
                 sendLogToPython('info', args);
             };
             
             console.debug = function(...args) {
+                if (!shouldOutput('debug')) return;
                 originalConsole.debug(...args);
                 sendLogToPython('debug', args);
             };
             
-            originalConsole.log('[前端] Console 輸出已重定向到 Python 端');
+            if (shouldOutput('info')) {
+                originalConsole.info('[前端] Console 輸出已重定向到 Python 端');
+            }
         })();
         
         // 添加全局錯誤處理和調試信息
@@ -1935,6 +2441,14 @@
         ];
 
         // 儲存所有下載任務的陣列
+        // 全局工具函數：轉義 HTML 特殊字符
+        function escapeHtml(text) {
+            if (!text) return '';
+            const div = document.createElement('div');
+            div.textContent = String(text);
+            return div.innerHTML;
+        }
+
         let downloadQueue = [];
         let nextTaskId = 0; // 用於給每個任務一個獨特的ID
         window.__ofNotificationsEnabled = true;
@@ -2103,6 +2617,23 @@
             }
         }
 
+        function openPopupOverlay(modalElement) {
+            if (!modalElement) return;
+            modalElement.style.display = 'flex';
+            requestAnimationFrame(() => modalElement.classList.add('show'));
+        }
+
+        function closePopupOverlay(modalElement, onClosed = null) {
+            if (!modalElement) return;
+            modalElement.classList.remove('show');
+            setTimeout(() => {
+                modalElement.style.display = 'none';
+                if (typeof onClosed === 'function') {
+                    onClosed();
+                }
+            }, 240);
+        }
+
         /**
          * 顯示一般訊息模態視窗。
          * @param {string} title - 訊息標題。
@@ -2112,8 +2643,7 @@
             const modal = document.getElementById('modal-bg');
             document.getElementById('modal-title').innerText = title;
             document.getElementById('modal-msg').innerHTML = msg;
-            modal.style.display = 'flex';
-            setTimeout(() => modal.classList.add('show'), 10); // 觸發動畫
+            openPopupOverlay(modal);
         }
 
         /**
@@ -2121,10 +2651,7 @@
          */
         function closeModal() {
             const modal = document.getElementById('modal-bg');
-            modal.classList.remove('show');
-            setTimeout(() => {
-                modal.style.display = 'none';
-            }, 200); // 等待動畫結束
+            closePopupOverlay(modal);
         }
         
         /**
@@ -2138,8 +2665,7 @@
             // 存儲確認回調函數
             window._confirmCallback = onConfirm;
             
-            modal.style.display = 'flex';
-            setTimeout(() => modal.classList.add('show'), 10);
+            openPopupOverlay(modal);
         }
         
         /**
@@ -2147,7 +2673,6 @@
          */
         function closeConfirmModal() {
             const modal = document.getElementById('confirm-modal-bg');
-            modal.classList.remove('show');
             
             // 如果取消的是文件已存在的確認，需要通知後端取消下載並從佇列中移除任務
             // 立即執行，不等待動畫完成
@@ -2178,10 +2703,9 @@
                 }
             }
             
-            setTimeout(() => {
-                modal.style.display = 'none';
+            closePopupOverlay(modal, () => {
                 window._confirmCallback = null;
-            }, 200);
+            });
         }
         
         /**
@@ -2199,11 +2723,9 @@
          */
         function closeVideoModal() {
             const videoModalBg = document.getElementById('video-modal-bg');
-            videoModalBg.classList.remove('show');
-            setTimeout(() => {
-                videoModalBg.style.display = 'none';
+            closePopupOverlay(videoModalBg, () => {
                 hideLoading();
-            }, 200);
+            });
         }
 
         /**
@@ -2226,8 +2748,10 @@
                 showModal('錯誤', '請輸入影片網址');
                 return;
             }
-            
-            // 與主頁一致：開啟影片資訊模態，讓使用者選擇格式再下載
+
+            // 與主頁一致：先顯示「載入中」覆蓋層，再開啟影片/播放清單資訊模態
+            requestAnimationFrame(() => showLoading());
+            // 開啟影片資訊模態，讓使用者選擇格式或自動切換至播放清單視窗
             try { currentUrl = (url || '').trim(); } catch(e) { currentUrl = ''; }
             showVideoModal(url);
             
@@ -2288,6 +2812,18 @@
                         if (downloadPathInput) {
                             downloadPathInput.value = settings.customDownloadPath || '';
                         }
+
+                        // 載入播放清單通知模式設定
+                        const playlistNotifyMode = settings.playlistNotificationMode || 'complete';
+                        const notifyCompleteRadio = document.getElementById('playlist-notify-complete');
+                        const notifyEachRadio = document.getElementById('playlist-notify-each');
+                        if (notifyCompleteRadio) notifyCompleteRadio.checked = (playlistNotifyMode === 'complete');
+                        if (notifyEachRadio) notifyEachRadio.checked = (playlistNotifyMode === 'each');
+
+                        // 依啟用通知設定啟用/停用播放清單通知選項
+                        const enabled = settings.enableNotifications !== false;
+                        if (notifyCompleteRadio) notifyCompleteRadio.disabled = !enabled;
+                        if (notifyEachRadio) notifyEachRadio.disabled = !enabled;
                         
                         // 為設定項目添加自動儲存事件監聽器
                         setupAutoSaveListeners();
@@ -2314,6 +2850,12 @@
                 notificationCheckbox.addEventListener('change', function() {
                     console.log('通知設定已變更，自動儲存中...');
                     window.__ofNotificationsEnabled = !!this.checked;
+                    // 啟用/停用播放清單通知選項
+                    const notifyCompleteRadio = document.getElementById('playlist-notify-complete');
+                    const notifyEachRadio = document.getElementById('playlist-notify-each');
+                    const enabled = !!this.checked;
+                    if (notifyCompleteRadio) notifyCompleteRadio.disabled = !enabled;
+                    if (notifyEachRadio) notifyEachRadio.disabled = !enabled;
                     saveSettings(true); // 靜默儲存
                 });
                 notificationCheckbox.setAttribute('data-listener-added', 'true');
@@ -2332,6 +2874,17 @@
             // 為下載路徑設定添加變更監聽器
             const downloadPathInput = document.getElementById('custom-download-path');
             if (downloadPathInput && !downloadPathInput.hasAttribute('data-listener-added')) {
+                let downloadPathSaveTimer = null;
+                downloadPathInput.addEventListener('input', function() {
+                    if (downloadPathSaveTimer) {
+                        clearTimeout(downloadPathSaveTimer);
+                    }
+                    // 打字時延遲儲存，避免每個字都觸發一次 I/O
+                    downloadPathSaveTimer = setTimeout(() => {
+                        console.log('下載路徑輸入中，自動儲存中...');
+                        saveSettings(true); // 靜默儲存
+                    }, 500);
+                });
                 downloadPathInput.addEventListener('change', function() {
                     console.log('下載路徑已變更，自動儲存中...');
                     saveSettings(true); // 靜默儲存
@@ -2352,6 +2905,28 @@
                 maxConcInput.setAttribute('data-listener-added', 'true');
             }
             
+            // 為播放清單通知模式單選按鈕添加變更監聽器
+            const notifyCompleteRadio = document.getElementById('playlist-notify-complete');
+            const notifyEachRadio = document.getElementById('playlist-notify-each');
+            if (notifyCompleteRadio && !notifyCompleteRadio.hasAttribute('data-listener-added')) {
+                notifyCompleteRadio.addEventListener('change', function() {
+                    if (this.checked) {
+                        console.log('播放清單通知模式已變更為：整個播放清單完成才通知');
+                        saveSettings(true);
+                    }
+                });
+                notifyCompleteRadio.setAttribute('data-listener-added', 'true');
+            }
+            if (notifyEachRadio && !notifyEachRadio.hasAttribute('data-listener-added')) {
+                notifyEachRadio.addEventListener('change', function() {
+                    if (this.checked) {
+                        console.log('播放清單通知模式已變更為：每部影片完成就通知');
+                        saveSettings(true);
+                    }
+                });
+                notifyEachRadio.setAttribute('data-listener-added', 'true');
+            }
+
             // 為瀏覽按鈕添加點擊事件
             const browseButton = document.getElementById('browse-download-path');
             if (browseButton && !browseButton.hasAttribute('data-listener-added')) {
@@ -2382,11 +2957,15 @@
             const resolutionCheckbox = document.getElementById('add-resolution-to-filename');
             const downloadPathInput = document.getElementById('custom-download-path');
             const maxConcInput = document.getElementById('max-concurrent-downloads');
+            const notifyCompleteRadio = document.getElementById('playlist-notify-complete');
+            const notifyEachRadio = document.getElementById('playlist-notify-each');
+            const playlistNotifyMode = notifyEachRadio && notifyEachRadio.checked ? 'each' : 'complete';
             const settings = {
                 enableNotifications: notificationCheckbox ? notificationCheckbox.checked : true,
                 addResolutionToFilename: resolutionCheckbox ? resolutionCheckbox.checked : false,
                 customDownloadPath: downloadPathInput ? downloadPathInput.value : '',
-                maxConcurrentDownloads: maxConcInput ? Number(maxConcInput.value || 3) : 3
+                maxConcurrentDownloads: maxConcInput ? Number(maxConcInput.value || 3) : 3,
+                playlistNotificationMode: playlistNotifyMode
             };
             window.__ofNotificationsEnabled = settings.enableNotifications !== false;
             
@@ -2435,6 +3014,25 @@
                                 if (downloadPathInput) {
                                     downloadPathInput.value = settings.customDownloadPath || '';
                                 }
+
+                                const maxConcInput = document.getElementById('max-concurrent-downloads');
+                                if (maxConcInput) {
+                                    let v = Number(settings.maxConcurrentDownloads || 3);
+                                    if (!isFinite(v)) v = 3;
+                                    v = Math.max(1, Math.min(10, Math.round(v)));
+                                    maxConcInput.value = String(v);
+                                }
+
+                                // 重設播放清單通知模式
+                                const playlistNotifyMode = settings.playlistNotificationMode || 'complete';
+                                const notifyCompleteRadio = document.getElementById('playlist-notify-complete');
+                                const notifyEachRadio = document.getElementById('playlist-notify-each');
+                                if (notifyCompleteRadio) notifyCompleteRadio.checked = (playlistNotifyMode === 'complete');
+                                if (notifyEachRadio) notifyEachRadio.checked = (playlistNotifyMode === 'each');
+                                const enabled = settings.enableNotifications !== false;
+                                if (notifyCompleteRadio) notifyCompleteRadio.disabled = !enabled;
+                                if (notifyEachRadio) notifyEachRadio.disabled = !enabled;
+
                                 // 自動儲存重設後的設定
                                 saveSettings(true); // 靜默儲存
                                 showModal('成功', '設定已重設為預設值');
@@ -2537,8 +3135,7 @@
             }
             
             const videoModalBg = document.getElementById('video-modal-bg');
-            videoModalBg.style.display = 'flex';
-            setTimeout(() => videoModalBg.classList.add('show'), 10);
+            openPopupOverlay(videoModalBg);
             document.getElementById('video-modal-loading').style.display = '';
             document.getElementById('video-modal-content').style.display = 'none';
             // 使用 requestAnimationFrame 確保樣式更新後再顯示，避免同步阻塞不重繪
@@ -2693,6 +3290,80 @@
         let isQualitySelectOpen = false;
         let isFormatSelectOpen = false;
 
+        function positionSelectOptions(select) {
+            if (!select) return;
+            const options = select.querySelector('.custom-select-options');
+            const header = select.querySelector('.custom-select-header');
+            if (!options || !header || !options.classList.contains('show')) return;
+
+            const rect = header.getBoundingClientRect();
+            const viewportWidth = window.innerWidth || document.documentElement.clientWidth;
+            const viewportHeight = window.innerHeight || document.documentElement.clientHeight;
+            const edgePadding = 8;
+
+            const width = Math.max(120, Math.round(rect.width));
+            let left = Math.round(rect.left);
+            if (left + width > viewportWidth - edgePadding) {
+                left = Math.max(edgePadding, viewportWidth - edgePadding - width);
+            }
+            if (left < edgePadding) left = edgePadding;
+
+            const spaceBelow = viewportHeight - rect.bottom - edgePadding;
+            const spaceAbove = rect.top - edgePadding;
+            const openUpward = spaceBelow < 160 && spaceAbove > spaceBelow;
+            const maxHeight = Math.max(120, Math.floor(openUpward ? spaceAbove : spaceBelow));
+
+            options.style.position = 'fixed';
+            options.style.left = `${left}px`;
+            options.style.right = 'auto';
+            options.style.width = `${width}px`;
+            options.style.minWidth = '';
+            options.style.zIndex = '20000';
+            options.style.maxHeight = `${maxHeight}px`;
+
+            if (openUpward) {
+                options.style.top = 'auto';
+                options.style.bottom = `${Math.max(edgePadding, viewportHeight - rect.top)}px`;
+            } else {
+                options.style.top = `${Math.round(rect.bottom)}px`;
+                options.style.bottom = 'auto';
+            }
+        }
+
+        function clearSelectOptionsPosition(select) {
+            if (!select) return;
+            const options = select.querySelector('.custom-select-options');
+            if (!options) return;
+            options.style.position = '';
+            options.style.left = '';
+            options.style.right = '';
+            options.style.top = '';
+            options.style.bottom = '';
+            options.style.width = '';
+            options.style.minWidth = '';
+            options.style.maxHeight = '';
+            options.style.zIndex = '';
+        }
+
+        function closeCustomSelect(select) {
+            if (!select) return;
+            const options = select.querySelector('.custom-select-options');
+            const header = select.querySelector('.custom-select-header');
+            if (options) options.classList.remove('show');
+            if (header) header.classList.remove('active');
+            clearSelectOptionsPosition(select);
+        }
+
+        function refreshOpenSelectPositions() {
+            document.querySelectorAll('.custom-select .custom-select-options.show').forEach(options => {
+                const select = options.closest('.custom-select');
+                if (select) positionSelectOptions(select);
+            });
+        }
+
+        window.addEventListener('resize', refreshOpenSelectPositions);
+        document.addEventListener('scroll', refreshOpenSelectPositions, true);
+
         /**
          * 切換下拉選單的開關狀態
          */
@@ -2713,9 +3384,11 @@
                 if (isQualitySelectOpen) {
                     options.classList.add('show');
                     header.classList.add('active');
+                    positionSelectOptions(select);
                 } else {
                     options.classList.remove('show');
                     header.classList.remove('active');
+                    clearSelectOptionsPosition(select);
                 }
             } else if (selectId === 'format-select') {
                 closeSelect('quality-select');
@@ -2724,9 +3397,11 @@
                 if (isFormatSelectOpen) {
                     options.classList.add('show');
                     header.classList.add('active');
+                    positionSelectOptions(select);
                 } else {
                     options.classList.remove('show');
                     header.classList.remove('active');
+                    clearSelectOptionsPosition(select);
                 }
             } else if (selectId === 'theme-select') {
                 closeSelect('quality-select');
@@ -2735,9 +3410,11 @@
                 if (!isThemeSelectOpen) {
                     options.classList.add('show');
                     header.classList.add('active');
+                    positionSelectOptions(select);
                 } else {
                     options.classList.remove('show');
                     header.classList.remove('active');
+                    clearSelectOptionsPosition(select);
                 }
             }
         }
@@ -2754,8 +3431,7 @@
             
             if (!options || !header) return;
             
-            options.classList.remove('show');
-            header.classList.remove('active');
+            closeCustomSelect(select);
             
             if (selectId === 'quality-select') {
                 isQualitySelectOpen = false;
@@ -3074,11 +3750,42 @@
             showPage('queue');
         }
 
+        let _renderQueueDebounceTimer = null;
+        const RENDER_QUEUE_DEBOUNCE_MS = 220;
+
+        /**
+         * 延遲重繪佇列（用於狀態變更時防抖，避免閃爍與頻繁重排）
+         */
+        function scheduleRenderQueue() {
+            if (_renderQueueDebounceTimer) clearTimeout(_renderQueueDebounceTimer);
+            _renderQueueDebounceTimer = setTimeout(() => {
+                _renderQueueDebounceTimer = null;
+                renderQueue();
+            }, RENDER_QUEUE_DEBOUNCE_MS);
+        }
+
         /**
          * 渲染或更新下載佇列的顯示。
+         * 直接呼叫時會立即執行；狀態變更請使用 scheduleRenderQueue() 以防抖。
          */
         function renderQueue() {
+            if (_renderQueueDebounceTimer) {
+                clearTimeout(_renderQueueDebounceTimer);
+                _renderQueueDebounceTimer = null;
+            }
             const queueList = document.getElementById('queue-list');
+
+            // 在清空 DOM 前儲存播放清單卡片的摺疊狀態與捲動位置
+            const collapsedState = {};
+            queueList.querySelectorAll('.queue-playlist-card').forEach((card) => {
+                const pid = card.getAttribute('data-playlist-id');
+                if (pid) {
+                    const body = card.querySelector('.queue-playlist-card-body');
+                    collapsedState[pid] = body && body.classList.contains('queue-playlist-card-body-collapsed');
+                }
+            });
+            const savedScrollTop = queueList.scrollTop;
+
             queueList.innerHTML = ''; // 清空現有內容以重新渲染
 
             if (downloadQueue.length === 0) {
@@ -3086,82 +3793,85 @@
                 return;
             }
 
-            // 對佇列進行排序：
-            // 1. 正在下載的排在最上方（按 id 降序，新的在上）
-            // 2. 下載完畢的排在正在下載的下方（按 id 降序）
-            // 3. 等待中的排在最下方（按 id 降序）
-            const sortedQueue = [...downloadQueue].sort((a, b) => {
-                // 定義狀態優先級：下載中 > 已完成 > 等待中
-                const statusPriority = {
-                    '下載中': 3,
-                    '已完成': 2,
-                    '等待中': 1
-                };
-                const priorityA = statusPriority[a.status] || 0;
-                const priorityB = statusPriority[b.status] || 0;
-                
-                // 先按狀態優先級排序
-                if (priorityA !== priorityB) {
-                    return priorityB - priorityA; // 優先級高的在前
+            // 先依 playlistGroupId 分組，播放清單內的影片作為一體
+            const statusPriority = {
+                '下載中': 3,
+                '已完成': 2,
+                '等待中': 1,
+                '準備中': 1,
+                '等待同名影片下載完成': 1
+            };
+            const getPriority = (s) => {
+                if (statusPriority[s]) return statusPriority[s];
+                if (s && s.indexOf('重試中') !== -1) return 1;
+                return 0;
+            };
+
+            const groupMap = new Map(); // playlistGroupId -> { id, title, tasks }
+            const singleTasks = [];
+            downloadQueue.forEach((task) => {
+                if (task.playlistGroupId) {
+                    if (!groupMap.has(task.playlistGroupId)) {
+                        groupMap.set(task.playlistGroupId, {
+                            id: task.playlistGroupId,
+                            title: task.playlistTitle || '播放清單',
+                            tasks: []
+                        });
+                    }
+                    groupMap.get(task.playlistGroupId).tasks.push(task);
+                } else {
+                    singleTasks.push(task);
                 }
-                
-                // 相同狀態時，按 id 降序排序（新的在上）
-                return b.id - a.id;
             });
 
-            sortedQueue.forEach((task, index) => {
-                // 創建任務項目
-                const itemDiv = document.createElement('div');
-                itemDiv.classList.add('queue-item');
-                itemDiv.setAttribute('data-task-id', task.id); // 便於後續更新特定任務
+            // 組的排序鍵：取組內最高優先級，同優先級時以組內最小 id 決定（保持新增順序）
+            const getGroupSortKey = (g) => {
+                const tasks = g.single ? [g.single] : g.tasks;
+                const maxPri = Math.max(...tasks.map(t => getPriority(t.status)));
+                const minId = Math.min(...tasks.map(t => t.id));
+                return { maxPri, minId };
+            };
+            const playlistGroups = Array.from(groupMap.values());
+            const allGroups = [
+                ...playlistGroups.map(g => ({ ...g, single: null })),
+                ...singleTasks.map(t => ({ single: t }))
+            ];
+            allGroups.sort((a, b) => {
+                const keyA = getGroupSortKey(a);
+                const keyB = getGroupSortKey(b);
+                if (keyA.maxPri !== keyB.maxPri) return keyB.maxPri - keyA.maxPri;
+                return keyA.minId - keyB.minId; // 較早加入的排前面（同優先級時）
+            });
 
-                // 處理長網址顯示
+            const groups = allGroups;
+
+            function esc(s) {
+                if (s == null) return '';
+                return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+            }
+
+            function renderOneTask(task, isNested) {
                 const displayUrl = task.url.length > 50 ? task.url.substring(0, 47) + '...' : task.url;
-
                 let thumbnailContent;
                 if (task.thumbnail) {
                     const escThumb = String(task.thumbnail).replace(/\"/g, '&quot;');
-                    thumbnailContent = `<img class=\"queue-item-thumbnail-image\" src=\"${escThumb}\" alt=\"影片縮圖\" onerror=\"this.style.display='none';this.parentNode.innerHTML='<div class=\\'queue-item-thumbnail-text\\'>找不到縮圖</div>'\">`;
+                    thumbnailContent = `<img class="queue-item-thumbnail-image" src="${escThumb}" alt="影片縮圖" onerror="this.style.display='none';this.parentNode.innerHTML='<div class=\\'queue-item-thumbnail-text\\'>找不到縮圖</div>'">`;
                 } else {
-                    thumbnailContent = `<div class=\"queue-item-thumbnail-text\">找不到縮圖</div>`;
+                    thumbnailContent = `<div class="queue-item-thumbnail-text">找不到縮圖</div>`;
                 }
-
-                // 判斷是否為已完成狀態
                 const isCompleted = task.status === '已完成';
-                
-                // 為已完成任務添加 completed 類
-                if (isCompleted) {
-                    itemDiv.classList.add('completed');
-                }
-                
-                // 根據狀態決定顯示內容
-                let progressContent = '';
-                if (isCompleted) {
-                    // 下載完畢：不顯示進度條，改用醒目標示
-                    progressContent = `
-                        <div class="completed-badge">下載完成</div>
-                    `;
-                } else {
-                    // 未完成：顯示進度條
-                    progressContent = `
-                        <div class="progress-bar-container">
-                            <div class="progress-bar" style="width: ${task.progress}%;"></div>
-                        </div>
-                        <div class="progress-text">${task.status} (${task.progress.toFixed(1)}%)</div>
-                    `;
-                }
-
-                itemDiv.innerHTML = `
-                    <div class="queue-item-thumbnail">
-                        ${thumbnailContent}
-                    </div>
+                const progressContent = isCompleted
+                    ? `<div class="completed-badge">下載完成</div>`
+                    : `<div class="progress-bar-container"><div class="progress-bar" style="width: ${task.progress}%;"></div></div><div class="progress-text">${esc(task.status)} (${task.progress.toFixed(1)}%)</div>`;
+                const itemClass = isNested ? 'queue-playlist-video-item' : 'queue-item';
+                const thumbClass = isNested ? 'queue-playlist-video-thumb' : 'queue-item-thumbnail';
+                return `
+                    <div class="${thumbClass}">${thumbnailContent}</div>
                     <div class="queue-item-info">
-                        <div class="queue-item-title">${task.title}</div>
-                        <div class="queue-item-meta">${task.uploader} · ${task.duration} · ${task.quality} · ${task.format.toUpperCase()}</div>
+                        <div class="queue-item-title">${esc(task.title)}</div>
+                        <div class="queue-item-meta">${esc(task.uploader)} · ${esc(task.duration)} · ${esc(task.quality)} · ${esc(task.format).toUpperCase()}</div>
                         <div class="queue-item-url">
-                            <a href="${task.url}" class="queue-item-link" data-url="${task.url}" title="${task.url}">
-                                ${displayUrl}
-                            </a>
+                            <a href="${esc(task.url)}" class="queue-item-link" data-url="${esc(task.url)}" title="${esc(task.url)}">${esc(displayUrl)}</a>
                         </div>
                         ${progressContent}
                     </div>
@@ -3171,10 +3881,10 @@
                         </button>
                     </div>
                 `;
-                queueList.appendChild(itemDiv);
+            }
 
-                // 為連結添加點擊事件處理器
-                const linkElement = itemDiv.querySelector('.queue-item-link');
+            function attachLinkHandler(container) {
+                const linkElement = container.querySelector('.queue-item-link');
                 if (linkElement) {
                     linkElement.addEventListener('click', function(ev) {
                         ev.preventDefault();
@@ -3185,38 +3895,109 @@
                                 if (window.api && window.api.open_external_link) {
                                     window.api.open_external_link(url);
                                 } else {
-                                    // 備用方案
-                                    console.warn('window.api.open_external_link 不可用，嘗試使用 window.open');
                                     window.open(url, '_blank');
                                 }
                             } catch(e) {
-                                console.error('無法開啟外部連結:', e);
-                                // 最後的備用方案
-                                try {
-                                    window.open(url, '_blank');
-                                } catch(_) {
-                                    console.error('window.open 也失敗了');
-                                }
+                                try { window.open(url, '_blank'); } catch(_) {}
                             }
                         }
                     });
                 }
+            }
 
-                // 如果不是最後一個項目，添加分隔線
-                if (index < sortedQueue.length - 1) {
+            groups.forEach((group, groupIndex) => {
+                if (group.single) {
+                    const task = group.single;
+                    const itemDiv = document.createElement('div');
+                    itemDiv.classList.add('queue-item');
+                    itemDiv.setAttribute('data-task-id', task.id);
+                    const isCompleted = task.status === '已完成';
+                    if (isCompleted) itemDiv.classList.add('completed');
+                    itemDiv.innerHTML = renderOneTask(task, false);
+                    queueList.appendChild(itemDiv);
+                    attachLinkHandler(itemDiv);
+                } else {
+                    const cardId = 'playlist-card-' + group.id;
+                    const cardDiv = document.createElement('div');
+                    cardDiv.className = 'queue-playlist-card';
+                    cardDiv.setAttribute('data-playlist-id', group.id);
+                    const allDone = group.tasks.every(t => t.status === '已完成');
+                    const hasCompletedTask = group.tasks.some(t => t.status === '已完成');
+                    if (allDone) cardDiv.classList.add('completed');
+                    const totalProgress = group.tasks.length ? (group.tasks.reduce((s, t) => s + (t.progress || 0), 0) / group.tasks.length) : 0;
+                    cardDiv.innerHTML = `
+                        <div class="queue-playlist-card-header" onclick="togglePlaylistCard('${cardId}')" role="button" tabindex="0" aria-expanded="true">
+                            <div class="queue-playlist-card-header-top">
+                                <span class="queue-playlist-card-title">${esc(group.title)}</span>
+                                <span class="queue-playlist-card-count">${group.tasks.length} 部影片</span>
+                                <div class="queue-item-actions">
+                                    <button class="queue-item-action-btn" onclick="event.stopPropagation(); openPlaylistFileLocation('${group.id}')" ${hasCompletedTask ? '' : 'disabled'}>
+                                        <img src="assets/folder.png" alt="開啟檔案位置">
+                                    </button>
+                                </div>
+                                <span class="queue-playlist-card-chevron" id="${cardId}-chevron" style="transform: rotate(0deg);">▲</span>
+                            </div>
+                            <div class="queue-playlist-card-total-progress" id="${cardId}-total">
+                                <span class="queue-playlist-badge">播放清單</span>
+                                <div class="queue-playlist-total-bar-wrap">
+                                    <div class="progress-bar-container">
+                                        <div class="progress-bar" style="width: ${totalProgress}%;"></div>
+                                    </div>
+                                </div>
+                                <span class="queue-playlist-total-pct">${totalProgress.toFixed(1)}%</span>
+                            </div>
+                        </div>
+                        <div class="queue-playlist-card-body" id="${cardId}-body">
+                            ${group.tasks.map(t => {
+                                const isCompleted = t.status === '已完成';
+                                return `<div class="queue-playlist-video-item ${isCompleted ? 'completed' : ''}" data-task-id="${t.id}">${renderOneTask(t, true)}</div>`;
+                            }).join('')}
+                        </div>
+                    `;
+                    queueList.appendChild(cardDiv);
+                    const bodyEl = cardDiv.querySelector('.queue-playlist-card-body');
+                    const chevronEl = cardDiv.querySelector('.queue-playlist-card-chevron');
+                    bodyEl.querySelectorAll('.queue-playlist-video-item').forEach((row) => {
+                        attachLinkHandler(row);
+                    });
+                    // 還原摺疊狀態
+                    if (collapsedState[group.id]) {
+                        bodyEl.classList.add('queue-playlist-card-body-collapsed');
+                        if (chevronEl) chevronEl.textContent = '▶';
+                    }
+                }
+
+                if (groupIndex < groups.length - 1) {
                     const separatorDiv = document.createElement('div');
                     separatorDiv.classList.add('queue-separator');
                     queueList.appendChild(separatorDiv);
                 }
             });
+
+            // 還原捲動位置，減少視覺跳動
+            if (savedScrollTop > 0) {
+                requestAnimationFrame(() => { queueList.scrollTop = savedScrollTop; });
+            }
+        }
+
+        function togglePlaylistCard(cardId) {
+            const body = document.getElementById(cardId + '-body');
+            const chevron = document.getElementById(cardId + '-chevron');
+            if (!body || !chevron) return;
+            const isCollapsed = body.classList.toggle('queue-playlist-card-body-collapsed');
+            // 展開：箭頭向上；收合：箭頭向下，並加入旋轉動畫
+            chevron.textContent = '▲';
+            chevron.style.transform = isCollapsed ? 'rotate(180deg)' : 'rotate(0deg)';
         }
 
         // **重要：新增一個函數來更新特定任務的進度**
         // 這個函數將由 Python 後端呼叫（透過 pywebview.api.update_progress）
         // 使用格式標籤來避免同名文件不同格式時抓錯狀態
         window.updateDownloadProgress = function(taskId, progress, status = '下載中', message = '', filePath = '', format = '') {
-            // 嚴格使用 taskId 來查找任務
-            let taskIndex = downloadQueue.findIndex(task => task.id === taskId);
+            // 後端可能傳 number 或 string，統一以數值比對以對齊佇列頁 data-task-id
+            const tid = Number(taskId);
+            if (!Number.isFinite(tid)) return;
+            let taskIndex = downloadQueue.findIndex(task => task.id === tid || task.id === taskId);
             
             // 如果找到了任務，驗證格式是否匹配（如果提供了 format）
             if (taskIndex !== -1 && format) {
@@ -3256,8 +4037,16 @@
                     return;
                 }
                 
+                // 進度條採單調遞增，避免估算波動或後處理階段造成回跳
+                const incomingProgress = Number(progress);
+                const safeIncomingProgress = Number.isFinite(incomingProgress) ? incomingProgress : 0;
+                const currentProgress = Number.isFinite(Number(task.progress)) ? Number(task.progress) : 0;
+                const mergedProgress = (status === '已完成')
+                    ? 100
+                    : Math.max(currentProgress, safeIncomingProgress);
+
                 // 更新任務狀態
-                task.progress = progress;
+                task.progress = mergedProgress;
                 task.status = status;
                 // 保存 ETA 信息（如果 message 包含）
                 if (message) {
@@ -3267,15 +4056,50 @@
                     task.filePath = filePath; // 更新檔案路徑
                 }
                 
-                // 如果狀態改變（特別是從下載中變為已完成），需要重新排序和渲染
+                // 如果狀態改變（特別是從下載中變為已完成），先就地更新該任務顯示，再防抖重排
                 if (oldStatus !== status) {
                     console.log(`任務 ${taskId} (格式: ${task.format}) 狀態從 "${oldStatus}" 變為 "${status}"`);
-                    renderQueue(); // 重新渲染整個佇列以更新排序
+                    const itemDiv = document.querySelector(`[data-task-id="${task.id}"]`);
+                    if (itemDiv && status === '已完成') {
+                        itemDiv.classList.add('completed');
+                        const progressContainer = itemDiv.querySelector('.progress-bar-container');
+                        const progressText = itemDiv.querySelector('.progress-text');
+                        const infoDiv = itemDiv.querySelector('.queue-item-info');
+                        const openFolderBtn = itemDiv.querySelector('.queue-item-action-btn');
+                        if (progressContainer && progressText) {
+                            progressContainer.remove();
+                            progressText.remove();
+                        }
+                        if (infoDiv && !infoDiv.querySelector('.completed-badge')) {
+                            const badge = document.createElement('div');
+                            badge.classList.add('completed-badge');
+                            badge.textContent = '下載完成';
+                            infoDiv.appendChild(badge);
+                        }
+                        if (openFolderBtn) {
+                            openFolderBtn.disabled = false;
+                            openFolderBtn.style.opacity = '1';
+                            openFolderBtn.style.cursor = 'pointer';
+                        }
+                        if (task.playlistGroupId) {
+                            const playlistTasks = downloadQueue.filter(t => t.playlistGroupId === task.playlistGroupId);
+                            const totalProgress = playlistTasks.length ? (playlistTasks.reduce((s, t) => s + (Number(t.progress) || 0), 0) / playlistTasks.length) : 0;
+                            const cardId = 'playlist-card-' + task.playlistGroupId;
+                            const totalWrap = document.getElementById(cardId + '-total');
+                            if (totalWrap) {
+                                const bar = totalWrap.querySelector('.progress-bar');
+                                const pctEl = totalWrap.querySelector('.queue-playlist-total-pct');
+                                if (bar) bar.style.width = totalProgress + '%';
+                                if (pctEl) pctEl.textContent = totalProgress.toFixed(1) + '%';
+                            }
+                        }
+                    }
+                    scheduleRenderQueue();
                     return;
                 }
                 
-                // 如果狀態沒變，只更新進度顯示
-                const itemDiv = document.querySelector(`.queue-item[data-task-id="${taskId}"]`);
+                // 如果狀態沒變，只更新進度顯示（用 task.id 與佇列項 data-task-id 對齊；可能是單一任務或播放清單內影片）
+                const itemDiv = document.querySelector(`[data-task-id="${task.id}"]`);
                 if (itemDiv) {
                     const isCompleted = status === '已完成';
                     const progressContainer = itemDiv.querySelector('.progress-bar-container');
@@ -3303,10 +4127,10 @@
                         itemDiv.classList.remove('completed');
                         // 更新進度條
                         if (progressBar) {
-                            progressBar.style.width = `${progress}%`;
+                            progressBar.style.width = `${mergedProgress}%`;
                         }
                         if (progressText) {
-                            progressText.innerText = `${status} (${progress.toFixed(1)}%)`;
+                            progressText.innerText = `${status} (${mergedProgress.toFixed(1)}%)`;
                         }
                         // 移除完成標示（如果存在）
                         if (completedBadge) {
@@ -3324,6 +4148,20 @@
                             openFolderBtn.disabled = true; // 禁用按鈕
                             openFolderBtn.style.opacity = '0.5'; // 變灰
                             openFolderBtn.style.cursor = 'not-allowed';
+                        }
+                    }
+
+                    // 若為播放清單內的影片，同步更新總進度條
+                    if (task.playlistGroupId) {
+                        const playlistTasks = downloadQueue.filter(t => t.playlistGroupId === task.playlistGroupId);
+                        const totalProgress = playlistTasks.length ? (playlistTasks.reduce((s, t) => s + (Number(t.progress) || 0), 0) / playlistTasks.length) : 0;
+                        const cardId = 'playlist-card-' + task.playlistGroupId;
+                        const totalWrap = document.getElementById(cardId + '-total');
+                        if (totalWrap) {
+                            const bar = totalWrap.querySelector('.progress-bar');
+                            const pctEl = totalWrap.querySelector('.queue-playlist-total-pct');
+                            if (bar) bar.style.width = totalProgress + '%';
+                            if (pctEl) pctEl.textContent = totalProgress.toFixed(1) + '%';
                         }
                     }
                 }
@@ -3345,7 +4183,7 @@
                 showModal("錯誤", "找不到指定的下載任務。");
                 return;
             }
-            const btn = document.querySelector(`.queue-item[data-task-id="${taskId}"] .queue-item-action-btn`);
+            const btn = document.querySelector(`[data-task-id="${taskId}"] .queue-item-action-btn`);
             if (btn) {
                 btn.disabled = true;
                 btn.style.opacity = '0.5';
@@ -3368,6 +4206,15 @@
                     console.error("開啟檔案位置時出錯:", error);
                     showModal("錯誤", "無法開啟檔案位置。");
                 });
+        }
+
+        function openPlaylistFileLocation(playlistGroupId) {
+            const targetTask = downloadQueue.find(t => String(t.playlistGroupId) === String(playlistGroupId) && t.status === '已完成');
+            if (!targetTask) {
+                showModal("錯誤", "此播放清單尚未有可開啟資料夾的已完成影片。");
+                return;
+            }
+            openFileLocation(targetTask.id);
         }
 
 
@@ -3398,10 +4245,7 @@
                     if (!select.contains(event.target)) {
                         const options = select.querySelector('.custom-select-options');
                         const header = select.querySelector('.custom-select-header');
-                        if (options && header) {
-                            options.classList.remove('show');
-                            header.classList.remove('active');
-                        }
+                        closeCustomSelect(select);
                     }
                 });
             }
@@ -3461,8 +4305,7 @@
                 return;
             }
             
-            modal.style.display = 'flex';
-            setTimeout(() => modal.classList.add('show'), 10);
+            openPopupOverlay(modal);
             
             const content = document.getElementById('playlist-modal-content');
             if (content) {
@@ -3836,9 +4679,11 @@
             if (isOpen) {
                 options.classList.remove('show');
                 header.classList.remove('active');
+                clearSelectOptionsPosition(select);
             } else {
                 options.classList.add('show');
                 header.classList.add('active');
+                positionSelectOptions(select);
             }
         }
         
@@ -3889,8 +4734,7 @@
             }
             
             // 關閉下拉選單
-            if (options) options.classList.remove('show');
-            if (header) header.classList.remove('active');
+            closeCustomSelect(select);
             
             // 更新數據
             if (type === 'quality') {
@@ -4126,9 +4970,11 @@
             if (isOpen) {
                 options.classList.remove('show');
                 header.classList.remove('active');
+                clearSelectOptionsPosition(select);
             } else {
                 options.classList.add('show');
                 header.classList.add('active');
+                positionSelectOptions(select);
             }
         }
 
@@ -4137,8 +4983,8 @@
             try {
                 const options = document.getElementById('playlist-global-format-options');
                 const header = document.querySelector('#playlist-global-format-select .custom-select-header');
-                if (options) options.classList.remove('show');
-                if (header) header.classList.remove('active');
+                const select = document.getElementById('playlist-global-format-select');
+                closeCustomSelect(select);
             } catch(e) {}
 
             // 移除錯誤標示（如果有的話）
@@ -4257,9 +5103,8 @@
                 return;
             }
 
-            // 檢查是否選擇了影片格式
+            // 檢查是否選擇了影片格式（僅視覺提示，不彈窗）
             if (!playlistGlobalFormatMode || playlistGlobalFormatMode === '') {
-                showModal('提醒', '請選擇影片格式');
                 // 醒目標示影片格式下拉欄
                 const formatSelect = document.getElementById('playlist-global-format-select');
                 if (formatSelect) {
@@ -4270,14 +5115,12 @@
                     if (header && options) {
                         options.classList.add('show');
                         header.classList.add('active');
+                        positionSelectOptions(formatSelect);
                     }
                     // 3秒後移除錯誤標示
                     setTimeout(() => {
                         formatSelect.classList.remove('error');
-                        if (options && header) {
-                            options.classList.remove('show');
-                            header.classList.remove('active');
-                        }
+                        closeCustomSelect(formatSelect);
                     }, 3000);
                 }
                 return;
@@ -4289,8 +5132,128 @@
                 return;
             }
 
-            // 先把任務加入佇列（UI 立即可見）
-            const batchPayload = [];
+            const playlistTitle = currentPlaylistData?.playlist_title || '播放清單';
+            
+            // 準備檢測用的資料
+            const checkPayload = {
+                playlistTitle: playlistTitle,
+                videos: selectedVideos.map(v => ({
+                    url: v.url,
+                    quality: v.quality || '1080p',
+                    format: v.format || 'mp4',
+                    title: v.title || '未知影片'
+                }))
+            };
+
+            // 檢查播放清單資料夾是否存在重複檔案
+            if (backend.check_playlist_folder_exists) {
+                backend.check_playlist_folder_exists(JSON.stringify(checkPayload))
+                    .then((result) => {
+                        try {
+                            const checkResult = JSON.parse(result);
+                            const folderExists = checkResult.folderExists || false;
+                            const duplicates = checkResult.duplicates || [];
+                            
+                            // 如果有重複檔案，顯示確認對話框
+                            if (folderExists && duplicates.length > 0) {
+                                // 先關閉播放清單格式選擇視窗，再顯示重複檔案提示
+                                closePlaylistModal();
+                                showPlaylistDuplicateModal(duplicates, (selectedFiles) => {
+                                    const selectedDeleteFiles = Array.isArray(selectedFiles) ? selectedFiles : [];
+                                    const selectedDeleteSet = new Set(selectedDeleteFiles);
+
+                                    const getDuplicateForVideo = (video) => {
+                                        const vUrl = (video?.url || '').trim();
+                                        if (vUrl) {
+                                            const byUrl = duplicates.find((dup) => (dup?.url || '').trim() === vUrl);
+                                            if (byUrl) return byUrl;
+                                        }
+                                        const vTitle = (video?.title || '').trim();
+                                        const vFmt = (video?.format || '').trim().toLowerCase();
+                                        if (vTitle) {
+                                            return duplicates.find((dup) => {
+                                                const dTitle = (dup?.title || '').trim();
+                                                const dFmt = (dup?.format || '').trim().toLowerCase();
+                                                return dTitle === vTitle && (!vFmt || !dFmt || dFmt === vFmt);
+                                            }) || null;
+                                        }
+                                        return null;
+                                    };
+
+                                    // 勾選代表要重新下載；未勾選的重複項目直接略過不下載
+                                    const videosToDownload = selectedVideos.filter((video) => {
+                                        const dup = getDuplicateForVideo(video);
+                                        if (!dup) return true; // 非重複項目，照常下載
+                                        return selectedDeleteSet.has(dup.filePath); // 重複項目，僅下載勾選者
+                                    });
+
+                                    if (videosToDownload.length === 0) {
+                                        showModal('提示', '你已選擇保留所有重複檔案，本次不會新增下載任務。');
+                                        return;
+                                    }
+
+                                    if (selectedDeleteFiles.length > 0) {
+                                        if (backend.delete_existing_files) {
+                                            backend.delete_existing_files(JSON.stringify(selectedDeleteFiles))
+                                                .then((deleteResult) => {
+                                                    try {
+                                                        const deleteData = JSON.parse(deleteResult);
+                                                        const failed = deleteData.failed || [];
+                                                        if (failed.length > 0) {
+                                                            console.warn('部分檔案刪除失敗:', failed);
+                                                        }
+                                                        proceedWithPlaylistDownload(videosToDownload, playlistTitle);
+                                                    } catch (e) {
+                                                        console.error('解析刪除結果失敗:', e);
+                                                        proceedWithPlaylistDownload(videosToDownload, playlistTitle);
+                                                    }
+                                                })
+                                                .catch((e) => {
+                                                    console.error('刪除檔案時出錯:', e);
+                                                    showModal('錯誤', '刪除舊檔案時發生錯誤，將繼續下載已勾選項目');
+                                                    proceedWithPlaylistDownload(videosToDownload, playlistTitle);
+                                                });
+                                        } else {
+                                            proceedWithPlaylistDownload(videosToDownload, playlistTitle);
+                                        }
+                                    } else {
+                                        proceedWithPlaylistDownload(videosToDownload, playlistTitle);
+                                    }
+                                });
+                            } else {
+                                // 沒有重複檔案，直接繼續下載
+                                proceedWithPlaylistDownload(selectedVideos, playlistTitle);
+                            }
+                        } catch (e) {
+                            console.error('解析檢測結果失敗:', e);
+                            // 出錯時假設沒有重複，繼續下載
+                            proceedWithPlaylistDownload(selectedVideos, playlistTitle);
+                        }
+                    })
+                    .catch((e) => {
+                        console.error('檢查播放清單資料夾時出錯:', e);
+                        // 出錯時假設沒有重複，繼續下載
+                        proceedWithPlaylistDownload(selectedVideos, playlistTitle);
+                    });
+            } else {
+                // 後端不支援檢測，直接繼續下載
+                proceedWithPlaylistDownload(selectedVideos, playlistTitle);
+            }
+        }
+
+        /**
+         * 繼續執行播放清單下載（在重複檢測後）
+         */
+        function proceedWithPlaylistDownload(selectedVideos, playlistTitle) {
+            const backend = __getBackendApi();
+            if (!backend || !(backend.start_batch_download || backend.start_download)) {
+                showModal('錯誤', '後端 API 尚未就緒，請稍後再試');
+                return;
+            }
+
+            // 先把任務加入佇列（UI 立即可見），每筆任務使用該影片自己的標題、縮圖、上傳者，並標記為同一播放清單
+            const playlistGroupId = 'pl-' + Date.now();
+            const batchVideos = [];
             selectedVideos.forEach((video) => {
                 const taskId = nextTaskId++;
                 const task = {
@@ -4298,28 +5261,41 @@
                     url: video.url,
                     title: video.title || '未知影片',
                     thumbnail: video.thumb || '',
-                    uploader: currentPlaylistData?.playlist_uploader || '未知作者',
+                    uploader: video.uploader || currentPlaylistData?.playlist_uploader || '未知作者',
                     duration: video.duration || '00:00',
                     quality: video.quality || '1080p',
                     format: video.format || 'mp4',
                     progress: 0,
                     status: '等待中',
                     filePath: '',
-                    eta: ''
+                    eta: '',
+                    playlistGroupId: playlistGroupId,
+                    playlistTitle: playlistTitle
                 };
                 addDownloadTask(task);
-                batchPayload.push({ id: taskId, url: task.url, quality: task.quality, format: task.format });
+                batchVideos.push({ id: taskId, url: task.url, quality: task.quality, format: task.format });
             });
+
+            // 後端：播放清單下載至集中子資料夾（base/播放清單名稱/），並傳遞群組ID供通知判斷
+            const batchPayload = { 
+                playlistTitle: playlistTitle, 
+                playlistGroupId: playlistGroupId,
+                videos: batchVideos 
+            };
 
             // 交給後端統一排程（比 setTimeout 多次呼叫穩定）
             try {
                 if (backend.start_batch_download) {
                     backend.start_batch_download(JSON.stringify(batchPayload))
-                        .then((result) => { console.log('批量下載結果:', result); })
-                        .catch((e) => { console.error('批量下載失敗:', e); });
+                        .then((result) => { 
+                            console.log('批量下載結果:', result);
+                        })
+                        .catch((e) => { 
+                            console.error('批量下載失敗:', e);
+                        });
                 } else {
-                    // 後備：逐個啟動
-                    batchPayload.forEach((it, idx) => {
+                    // 後備：逐個啟動（無子資料夾）
+                    batchVideos.forEach((it, idx) => {
                         setTimeout(() => {
                             try { backend.start_download(it.id, it.url, it.quality, it.format); } catch(_) {}
                         }, idx * 500);
@@ -4327,9 +5303,9 @@
                 }
             } catch(e) {
                 console.error('啟動批量下載時出錯:', e);
+                delete window._pendingPlaylistGroupId;
             }
 
-            showModal('成功', `已開始下載 ${selectedVideos.length} 部影片`);
             closePlaylistModal();
             showPage('queue');
         }
@@ -4339,10 +5315,162 @@
          */
         function closePlaylistModal() {
             const modal = document.getElementById('playlist-modal-bg');
-            modal.classList.remove('show');
-            setTimeout(() => {
-                modal.style.display = 'none';
-            }, 300);
+            closePopupOverlay(modal);
+        }
+
+        /**
+         * 顯示播放清單重複項目確認對話框
+         */
+        const playlistDuplicateState = {
+            callback: null,
+            duplicates: [],
+            escListener: null
+        };
+
+        function showPlaylistDuplicateModal(duplicates, onConfirm) {
+            if (typeof closeVideoModal === 'function') closeVideoModal();
+            const modal = document.getElementById('playlist-duplicate-modal-bg');
+            const listContainer = document.getElementById('playlist-duplicate-list');
+            const summary = document.getElementById('playlist-duplicate-summary');
+            if (!modal || !listContainer) return;
+
+            playlistDuplicateState.callback = (typeof onConfirm === 'function') ? onConfirm : null;
+            playlistDuplicateState.duplicates = (Array.isArray(duplicates) ? duplicates : []).map((dup) => ({ ...dup, selected: true }));
+
+            if (summary) {
+                const total = playlistDuplicateState.duplicates.length;
+                summary.textContent = `在目標播放清單資料夾中找到 ${total} 個同名檔案。\n請勾選想要重新下載的檔案(刪除舊檔並重新下載)；未勾選即代表保留舊檔且不重新下載。`;
+            }
+
+            renderPlaylistDuplicateRows();
+            openPopupOverlay(modal);
+
+            if (!playlistDuplicateState.escListener) {
+                playlistDuplicateState.escListener = (e) => {
+                    if (e.key === 'Escape') closePlaylistDuplicateModal();
+                };
+                document.addEventListener('keydown', playlistDuplicateState.escListener);
+            }
+        }
+
+        /**
+         * 關閉播放清單重複項目確認對話框
+         */
+        function closePlaylistDuplicateModal() {
+            const modal = document.getElementById('playlist-duplicate-modal-bg');
+            if (!modal) return;
+            closePopupOverlay(modal);
+            playlistDuplicateState.callback = null;
+            playlistDuplicateState.duplicates = [];
+            if (playlistDuplicateState.escListener) {
+                document.removeEventListener('keydown', playlistDuplicateState.escListener);
+                playlistDuplicateState.escListener = null;
+            }
+        }
+
+        /**
+         * 確認播放清單重複項目操作
+         */
+        function confirmPlaylistDuplicateAction() {
+            const callback = playlistDuplicateState.callback;
+            
+            if (!callback) {
+                closePlaylistDuplicateModal();
+                return;
+            }
+            
+            const selectedFiles = playlistDuplicateState.duplicates
+                .filter((dup) => dup.selected)
+                .map((dup) => dup.filePath)
+                .filter(Boolean);
+            
+            closePlaylistDuplicateModal();
+            
+            // 執行回調
+            if (callback) {
+                callback(selectedFiles);
+            }
+        }
+
+        function selectAllPlaylistDuplicates(checked) {
+            playlistDuplicateState.duplicates.forEach((dup) => {
+                dup.selected = !!checked;
+            });
+            renderPlaylistDuplicateRows();
+        }
+
+        function toggleAllPlaylistDuplicatesFromMaster(checked) {
+            selectAllPlaylistDuplicates(checked);
+        }
+
+        function syncPlaylistDuplicateMasterCheckbox() {
+            const master = document.getElementById('playlist-duplicate-master-check');
+            if (!master) return;
+            const total = playlistDuplicateState.duplicates.length;
+            const selectedCount = playlistDuplicateState.duplicates.filter((dup) => dup.selected).length;
+            master.indeterminate = selectedCount > 0 && selectedCount < total;
+            master.checked = total > 0 && selectedCount === total;
+        }
+
+        function updatePlaylistDuplicateSelectedCount() {
+            const total = playlistDuplicateState.duplicates.length;
+            const selectedCount = playlistDuplicateState.duplicates.filter((dup) => dup.selected).length;
+            const selectedEl = document.getElementById('playlist-duplicate-selected');
+            if (selectedEl) {
+                selectedEl.textContent = `已選擇 ${selectedCount} / ${total}`;
+            }
+            syncPlaylistDuplicateMasterCheckbox();
+        }
+
+        function renderPlaylistDuplicateRows() {
+            const listContainer = document.getElementById('playlist-duplicate-list');
+            if (!listContainer) return;
+            listContainer.innerHTML = '';
+
+            if (!playlistDuplicateState.duplicates.length) {
+                listContainer.innerHTML = '<div class="playlist-duplicate-empty">目前沒有可處理的重複項目。</div>';
+                updatePlaylistDuplicateSelectedCount();
+                return;
+            }
+
+            playlistDuplicateState.duplicates.forEach((dup, index) => {
+                const row = document.createElement('label');
+                row.className = `playlist-duplicate-row${dup.selected ? ' active' : ''}`;
+
+                const checkbox = document.createElement('input');
+                checkbox.type = 'checkbox';
+                checkbox.className = 'playlist-duplicate-checkbox';
+                checkbox.checked = !!dup.selected;
+                checkbox.addEventListener('change', (event) => {
+                    playlistDuplicateState.duplicates[index].selected = !!event.target.checked;
+                    row.classList.toggle('active', !!event.target.checked);
+                    updatePlaylistDuplicateSelectedCount();
+                });
+
+                const file = document.createElement('div');
+                file.className = 'playlist-duplicate-file';
+                const title = escapeHtml(dup.title || '未知影片');
+                const filePath = escapeHtml(dup.filePath || '');
+                file.innerHTML = `
+                    <div class="playlist-duplicate-file-title">${title}</div>
+                    <div class="playlist-duplicate-file-path" title="${filePath}">${filePath}</div>
+                `;
+
+                row.appendChild(checkbox);
+                row.appendChild(file);
+                listContainer.appendChild(row);
+            });
+
+            updatePlaylistDuplicateSelectedCount();
+        }
+
+        function bindUrlInputSelectAllOnClick(inputEl) {
+            if (!inputEl) return;
+            inputEl.addEventListener('click', () => {
+                if (inputEl.value) {
+                    inputEl.select();
+                }
+            });
         }
 
         // 首次載入時，綁定Enter事件並顯示主頁
@@ -4354,6 +5482,7 @@
                         downloadVideo();
                     }
                 });
+                bindUrlInputSelectAllOnClick(homeInput);
             }
             const queueInput = document.getElementById('queue-video-url');
             if (queueInput) {
@@ -4362,6 +5491,7 @@
                         downloadVideoFromQueue();
                     }
                 });
+                bindUrlInputSelectAllOnClick(queueInput);
             }
             showPage('home');
         });

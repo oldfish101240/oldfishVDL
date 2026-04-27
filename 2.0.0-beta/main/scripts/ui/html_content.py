@@ -4,8 +4,6 @@
 HTML 內容模組 - 完整版本
 """
 
-print("html_content.py is starting...")
-
 import os
 import sys
 

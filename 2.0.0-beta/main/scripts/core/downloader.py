@@ -4,8 +4,6 @@
 下載功能模組
 """
 
-print("downloader.py is starting...")
-
 import os
 import sys
 import threading
@@ -175,26 +173,19 @@ class Downloader:
             qnum = qval or '1080'
             download_console(f"畫質提取失敗，使用預設值: {qnum}")
 
-        # 使用用戶選擇的原始格式作為擴展名（如 mp3, mp4, mkv, webm 等）
-        # 如果沒有提供原始格式，則根據格式類型推斷
-        if original_format:
-            file_ext = original_format.strip().lower()
-        elif fmt_type == "音訊":
-            file_ext = 'mp3'  # 預設音訊格式
-        else:
-            file_ext = 'mp4'  # 預設影片格式
-
-        # 根據設定決定檔名模板，使用用戶選擇的格式作為擴展名
+        # 根據設定決定檔名模板
+        # 注意：不可在 outtmpl 中手動加入副檔名（如 .mp3/.mp4），否則 FFmpegExtractAudio 或 merge
+        # 會再附加一次副檔名，導致檔名變成 [影片名].[mp3/mp4].[mp3/mp4]。應由 postprocessor 自動附加。
         if add_resolution_to_filename:
             if fmt_type == "音訊":
-                # 音訊格式：標題_320kbps.{用戶選擇的格式}
-                outtmpl = os.path.join(target_dir, f'%(title)s_{qnum}kbps.{file_ext}')
+                # 音訊格式：標題_320kbps（副檔名由 FFmpegExtractAudio 自動附加）
+                outtmpl = os.path.join(target_dir, f'%(title)s_{qnum}kbps')
             else:
-                # 影片格式：標題_1080p.{用戶選擇的格式}
-                outtmpl = os.path.join(target_dir, f'%(title)s_%(height)sp.{file_ext}')
+                # 影片格式：標題_1080p（副檔名由 merge 自動附加）
+                outtmpl = os.path.join(target_dir, f'%(title)s_%(height)sp')
         else:
-            # 使用用戶選擇的格式作為擴展名
-            outtmpl = os.path.join(target_dir, f'%(title)s.{file_ext}')
+            # 標題（副檔名由 postprocessor 自動附加）
+            outtmpl = os.path.join(target_dir, '%(title)s')
 
         ydl_opts = {
             'outtmpl': outtmpl,

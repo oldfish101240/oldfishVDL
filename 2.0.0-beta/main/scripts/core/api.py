@@ -4,8 +4,6 @@
 主要 API 類別模組
 """
 
-print("api.py is starting...")
-
 import os
 import sys
 import json
@@ -24,6 +22,27 @@ from PySide6.QtCore import QObject, Slot, Signal, QTimer, QEventLoop
 from PySide6.QtWidgets import QFileDialog
 from scripts.utils.logger import api_console, download_console, video_info_console, debug_console, LogLevel
 from scripts.utils.file_utils import safe_path_join, get_download_path, resolve_relative_path, get_deno_path
+import re
+
+
+def _sanitize_folder_name(name):
+    """將播放清單標題轉為可用的資料夾名稱，移除非法字元"""
+    if not name or not str(name).strip():
+        return '播放清單'
+    s = str(name).strip()
+    s = re.sub(r'[<>:"/\\|?*]', '', s)  # 移除 Windows 非法字元
+    s = re.sub(r'\s+', ' ', s).strip()   # 多餘空白壓成單一空格
+    return s[:100] if s else '播放清單'   # 限制長度
+
+
+def _ellipsis(text, max_len=40):
+    """將文字過長時加上刪節號"""
+    if text is None:
+        return ''
+    s = str(text)
+    if len(s) <= max_len:
+        return s
+    return s[: max_len - 1] + '…'
 from scripts.utils.version_utils import compare_versions
 from scripts.config.settings import SettingsManager
 from .video_info import extract_video_info, is_playlist_url, extract_playlist_info, get_video_qualities_and_formats
@@ -114,10 +133,14 @@ class Api(QObject):
         self.task_download_paths = {}  # 追蹤每個任務的下載路徑
         self.task_formats = {}  # 追蹤每個任務的格式（用於避免同名文件不同格式時抓錯狀態）
         self.task_urls = {}  # 追蹤每個任務的 URL（用於檢查同名影片）
+        self.task_playlist_groups = {}  # 追蹤每個任務的播放清單群組ID（task_id -> playlistGroupId）
+        self.playlist_titles = {}  # 播放清單群組ID -> 播放清單名稱
+        self.playlist_notified = set()  # 追蹤已發送完成通知的播放清單群組ID
         self.downloading_urls = set()  # 正在下載的 URL 集合
         self.pending_tasks_by_url = {}  # 按 URL 分組的等待任務列表
         self.notification_handler = None
         self._last_progress_percent = {}
+        self._ytdlp_update_in_progress = False
         
         # 初始化組件
         self.settings_manager = SettingsManager(root_dir)
@@ -566,6 +589,9 @@ class Api(QObject):
     def _download_progress_hook(self, task_id, d):
         """下載進度回調"""
         try:
+            # 將「下載」與「後處理(合併/轉檔)」合併為單一連續進度，避免前端看到第二次重跳
+            download_stage_max = 92.0
+            postprocess_stage_percent = 97.0
             status_key = d.get('status')
             if not status_key:
                 download_console(f"【任務{task_id}】進度回調缺少 status 欄位")
@@ -578,7 +604,8 @@ class Api(QObject):
                 if d.get('total_bytes'):
                     total_bytes = d['total_bytes']
                     if total_bytes > 0:
-                        percent = min(100, max(0, downloaded_bytes / total_bytes * 100))
+                        raw_percent = min(100, max(0, downloaded_bytes / total_bytes * 100))
+                        percent = min(download_stage_max, max(0, raw_percent * download_stage_max / 100.0))
                         status = "下載中"
                     else:
                         percent = 0
@@ -586,7 +613,8 @@ class Api(QObject):
                 elif d.get('total_bytes_estimate'):
                     total_bytes_estimate = d['total_bytes_estimate']
                     if total_bytes_estimate > 0:
-                        percent = min(100, max(0, downloaded_bytes / total_bytes_estimate * 100))
+                        raw_percent = min(100, max(0, downloaded_bytes / total_bytes_estimate * 100))
+                        percent = min(download_stage_max, max(0, raw_percent * download_stage_max / 100.0))
                         status = "下載中 (預估)"
                     else:
                         percent = 0
@@ -622,7 +650,7 @@ class Api(QObject):
                 self._safe_eval_js("window.updateDownloadProgress", task_id, percent, status, '', safe_file_arg, task_format)
             elif status_key == 'finished':
                 try:
-                    download_console(f"任務 {task_id} 已完成", level=LogLevel.INFO)
+                    download_console(f"任務 {task_id} 下載階段完成，進入後處理", level=LogLevel.INFO)
                     file_arg = d.get('filename') or ''
                     safe_file_arg = (file_arg or '').replace('\\', '/')
                     # 獲取任務格式
@@ -631,8 +659,11 @@ class Api(QObject):
                     with self._lock:
                         task_format = self.task_formats.get(str(task_id), '')
                         task_url = self.task_urls.get(str(task_id), '')
-                    download_console(f"[完成通知] 任務{task_id}: 已完成, 格式: {task_format}, URL: {task_url}", level=LogLevel.DEBUG)
-                    self._safe_eval_js("window.updateDownloadProgress", task_id, 100, "已完成", '', safe_file_arg, task_format)
+                        current_percent = float(self._last_progress_percent.get(str(task_id), 0.0))
+                        percent = max(current_percent, postprocess_stage_percent)
+                        self._last_progress_percent[str(task_id)] = percent
+                    download_console(f"[後處理通知] 任務{task_id}: {percent:.1f}% - 後處理中, 格式: {task_format}, URL: {task_url}", level=LogLevel.DEBUG)
+                    self._safe_eval_js("window.updateDownloadProgress", task_id, percent, "後處理中", '', safe_file_arg, task_format)
                 except Exception as e:
                     download_console(f"完成進度回報失敗: {e}", level=LogLevel.ERROR)
             else:
@@ -674,8 +705,22 @@ class Api(QObject):
                 download_console("[DBG] _notify_download_complete_safely 即將 _process_pending_tasks_for_url (error 分支)", level=LogLevel.DEBUG)
                 self._process_pending_tasks_for_url(url)
             else:
-                # 記錄最終檔案路徑到任務追蹤中
+                # 記錄最終檔案路徑到任務追蹤中（確保為絕對路徑，支援播放清單子資料夾）
                 if file_path:
+                    # 將路徑轉換為絕對路徑，確保「開啟資料夾」按鈕能正確導向
+                    if not os.path.isabs(file_path):
+                        # 如果是相對路徑，使用任務記錄的下載目錄（可能包含播放清單子資料夾）
+                        with self._lock:
+                            task_dir = self.task_download_paths.get(str(task_id))
+                        if task_dir and os.path.isabs(task_dir):
+                            # 如果任務目錄是絕對路徑，用它來解析相對路徑
+                            file_path = os.path.normpath(os.path.join(task_dir, file_path))
+                        else:
+                            # 否則使用預設下載目錄
+                            base_dir = get_download_path(self.root_dir, self.settings_manager)
+                            file_path = os.path.normpath(os.path.join(base_dir, file_path))
+                    else:
+                        file_path = os.path.normpath(file_path)
                     with self._lock:
                         self.task_download_paths[str(task_id)] = file_path
                     download_console(f"任務 {task_id} 最終檔案路徑已記錄: {file_path}")
@@ -686,6 +731,7 @@ class Api(QObject):
                 task_format = ''
                 with self._lock:
                     task_format = self.task_formats.get(str(task_id), '')
+                    self._last_progress_percent[str(task_id)] = 100.0
                 self._safe_eval_js("window.updateDownloadProgress", task_id, 100, "已完成", '', safe_file, task_format)
                 
                 # 移除正在下載標記（鎖內僅做狀態更新，鎖外再處理等待任務，避免死鎖）
@@ -699,14 +745,60 @@ class Api(QObject):
             download_console("[DBG] _notify_download_complete_safely 即將 _safe_eval_js onDownloadComplete", level=LogLevel.DEBUG)
             self._safe_eval_js("window.onDownloadComplete", task_id)
             
-            # 發送通知
+            # 發送通知（根據播放清單通知設定決定時機）
             settings = self.settings_manager.load_settings()
             if settings.get('enableNotifications', True):
-                try:
-                    self._safe_eval_js("window.__ofShowToast", "下載完成", f"任務 {task_id} 已完成")
-                except Exception as toast_err:
-                    download_console(f"顯示 Toast 失敗: {toast_err}")
-                self._send_notification("下載完成", f"任務 {task_id} 已完成")
+                should_notify = True
+                playlist_notify_mode = settings.get('playlistNotificationMode', 'complete')
+                
+                # 檢查是否為播放清單任務
+                with self._lock:
+                    playlist_group_id = self.task_playlist_groups.get(str(task_id))
+                
+                # 準備顯示用影片標題（從檔名推斷）
+                video_title_display = None
+                if file_path:
+                    base = os.path.basename(file_path)
+                    name, _ = os.path.splitext(base)
+                    video_title_display = _ellipsis(name)
+                if not video_title_display:
+                    video_title_display = f"任務 {task_id}"
+
+                # 若是播放清單且模式為 complete，僅在整個播放清單完成時通知一次
+                if playlist_group_id and playlist_notify_mode == 'complete':
+                    with self._lock:
+                        # 檢查是否已經發送過通知（避免重複）
+                        if playlist_group_id in self.playlist_notified:
+                            should_notify = False
+                            download_console(f"播放清單 {playlist_group_id} 已完成通知已發送，跳過", level=LogLevel.DEBUG)
+                        else:
+                            # 找出同一個播放清單的所有任務
+                            playlist_task_ids = [tid for tid, pgid in self.task_playlist_groups.items() if pgid == playlist_group_id]
+                            # 檢查是否所有任務都已完成
+                            all_completed = all(int(tid) in self.completed_tasks for tid in playlist_task_ids)
+                            should_notify = all_completed
+                            if all_completed:
+                                self.playlist_notified.add(playlist_group_id)  # 標記已發送通知
+                                download_console(f"播放清單 {playlist_group_id} 所有任務已完成，發送通知", level=LogLevel.INFO)
+                            else:
+                                completed_count = sum(1 for tid in playlist_task_ids if int(tid) in self.completed_tasks)
+                                download_console(f"播放清單 {playlist_group_id} 進度: {completed_count}/{len(playlist_task_ids)}，暫不發送通知", level=LogLevel.DEBUG)
+                
+                if should_notify:
+                    try:
+                        # 播放清單完成模式且有群組ID：顯示播放清單完成
+                        if playlist_group_id and playlist_notify_mode == 'complete':
+                            with self._lock:
+                                playlist_title = self.playlist_titles.get(str(playlist_group_id)) or '播放清單'
+                            playlist_title_display = _ellipsis(playlist_title)
+                            self._safe_eval_js("window.__ofShowToast", "播放清單下載完成", f"\"{playlist_title_display}\"已下載完成")
+                            self._send_notification("播放清單下載完成", f"\"{playlist_title_display}\"已下載完成")
+                        else:
+                            # 單一影片（或播放清單但模式為 each）：每部影片完成就通知
+                            self._safe_eval_js("window.__ofShowToast", "影片下載完成", f"\"{video_title_display}\"已下載完成")
+                            self._send_notification("影片下載完成", f"\"{video_title_display}\"已下載完成")
+                    except Exception as toast_err:
+                        download_console(f"顯示 Toast 失敗: {toast_err}")
                     
         except Exception as e:
             download_console(f"通知下載完成失敗: {e}", level=LogLevel.WARNING)
@@ -880,6 +972,236 @@ class Api(QObject):
             download_console(f"刪除檔案失敗: {e}", level=LogLevel.ERROR)
             return f"失敗: {e}"
     
+    @Slot(str, result=str)
+    def check_playlist_folder_exists(self, playlist_data_json):
+        """檢查播放清單資料夾是否存在，並檢測重複的影片檔案（使用現有標題推算檔名，避免大量網路請求）
+        
+        返回 JSON 字串：
+        {
+            "folderExists": bool,
+            "duplicates": [
+                {"url": str, "title": str, "filePath": str, "quality": str, "format": str},
+                ...
+            ]
+        }
+        """
+        try:
+            payload = json.loads(playlist_data_json or '{}')
+            playlist_title = payload.get('playlistTitle') or payload.get('playlist_title') or '播放清單'
+            videos = payload.get('videos') or []
+
+            if not isinstance(videos, list) or len(videos) == 0:
+                return json.dumps({"folderExists": False, "duplicates": []}, ensure_ascii=False)
+
+            # 獲取下載路徑與設定
+            settings = self.settings_manager.load_settings()
+            add_resolution = settings.get('addResolutionToFilename', False)
+            base_dir = get_download_path(self.root_dir, self.settings_manager)
+            subfolder = _sanitize_folder_name(playlist_title)
+            playlist_folder = safe_path_join(base_dir, subfolder)
+
+            # 檢查資料夾是否存在
+            folder_exists = os.path.isdir(playlist_folder)
+            duplicates = []
+
+            if folder_exists:
+                download_console(f"播放清單資料夾已存在: {playlist_folder}", level=LogLevel.INFO)
+                video_exts = {'mp4', 'mkv', 'webm', 'flv', 'avi', 'mov'}
+                audio_exts = {'mp3', 'aac', 'flac', 'wav', 'm4a', 'ogg', 'opus'}
+
+                # 先建立資料夾檔案索引，避免每部影片都重複掃描
+                folder_files = []
+                try:
+                    for name in os.listdir(playlist_folder):
+                        full_path = os.path.join(playlist_folder, name)
+                        if os.path.isfile(full_path):
+                            stem, ext = os.path.splitext(name)
+                            folder_files.append({
+                                "name": name,
+                                "stem": stem,
+                                "ext": ext.lower().lstrip('.'),
+                                "path": full_path,
+                            })
+                except OSError:
+                    folder_files = []
+
+                def _normalize_stem_for_match(stem_text):
+                    s = str(stem_text or '')
+                    # 移除常見解析度/音訊碼率後綴（例如 _1080p / _320kbps）
+                    s = re.sub(r'[_\-\s]*(\d{3,4})p$', '', s, flags=re.IGNORECASE)
+                    s = re.sub(r'[_\-\s]*(\d{2,4})kbps$', '', s, flags=re.IGNORECASE)
+                    # 僅保留中英數，降低符號差異造成漏判
+                    s = re.sub(r'[^0-9a-zA-Z\u4e00-\u9fff]+', '', s).lower()
+                    return s
+
+                for video in videos:
+                    url = (video.get('url') or '').strip()
+                    quality = video.get('quality', '1080p')
+                    format_type = video.get('format', 'mp4')
+                    title = video.get('title', '未知影片')
+
+                    if not url:
+                        continue
+
+                    try:
+                        # 規範化格式與副檔名
+                        fmt = (format_type or '').strip().lower()
+                        if fmt in ('mp3', 'aac', 'flac', 'wav', 'audio'):
+                            normalized_format = '音訊'
+                            # 若原始格式為常見音訊格式就直接使用，否則預設 mp3
+                            ext = fmt if fmt in ('mp3', 'aac', 'flac', 'wav') else 'mp3'
+                        else:
+                            normalized_format = '影片'
+                            # 若原始格式為影片常見格式就直接使用，否則預設 mp4
+                            ext = fmt if fmt in ('mp4', 'mkv', 'webm') else 'mp4'
+
+                        # 依畫質字串抓出數字（例如 1080p -> 1080）
+                        q = (quality or '').strip()
+                        import re as re_module
+                        m = re_module.search(r"(\d+)", q)
+                        qnum = m.group(1) if m else ('320' if normalized_format == '音訊' else '1080')
+
+                        # 使用前端傳來的標題推算實際檔名（套用與下載時相同的非法字元過濾）
+                        safe_title = re.sub(r'[<>:"/\\|?*]', '', str(title) or '')
+                        if not safe_title:
+                            safe_title = '無標題影片'
+
+                        possible_files = []
+                        if normalized_format == '音訊':
+                            # mp3 等音訊：不論 add_resolution 設定，都檢查兩種檔名（下載時可能不同設定）
+                            possible_files.append(f"{safe_title}.{ext}")
+                            possible_files.append(f"{safe_title}_{qnum}kbps.{ext}")
+                        elif add_resolution:
+                            possible_files.append(f"{safe_title}_{qnum}p.{ext}")
+                        else:
+                            possible_files.append(f"{safe_title}.{ext}")
+
+                        existing_file = None
+                        for filename in possible_files:
+                            file_path = os.path.join(playlist_folder, filename)
+                            if os.path.exists(file_path):
+                                existing_file = file_path
+                                break
+
+                        # 精確未命中時，做正規化匹配，避免副檔名/後綴差異造成漏判
+                        if not existing_file and safe_title:
+                            safe_title_norm = _normalize_stem_for_match(safe_title)
+                            if safe_title_norm:
+                                if normalized_format == '音訊':
+                                    candidate_exts = audio_exts
+                                else:
+                                    candidate_exts = video_exts
+
+                                for f in folder_files:
+                                    if f.get('ext') not in candidate_exts:
+                                        continue
+                                    stem_norm = _normalize_stem_for_match(f.get('stem', ''))
+                                    if not stem_norm:
+                                        continue
+                                    # 支援同名、加後綴、或少量前綴（例如序號）情境
+                                    if (
+                                        stem_norm == safe_title_norm
+                                        or stem_norm.startswith(safe_title_norm)
+                                        or safe_title_norm.startswith(stem_norm)
+                                    ):
+                                        existing_file = f.get('path')
+                                        break
+
+                        if existing_file:
+                            # 根據實際檔名修正顯示用畫質資訊，讓提示內容更精確
+                            display_quality = quality
+                            try:
+                                base_name = os.path.basename(existing_file)
+                                if normalized_format == '音訊':
+                                    # 嘗試從檔名解析出 xxxxkbps
+                                    m2 = re_module.search(r'_(\d+)kbps', base_name, re.IGNORECASE)
+                                    if m2:
+                                        display_quality = f"{m2.group(1)}kbps"
+                                    else:
+                                        display_quality = f"{qnum}kbps"
+                                else:
+                                    # 影片：顯示為 xxxxp
+                                    m2 = re_module.search(r'(\d+)', base_name)
+                                    if m2:
+                                        display_quality = f"{m2.group(1)}p"
+                                    elif qnum:
+                                        display_quality = f"{qnum}p"
+                            except Exception:
+                                # 解析失敗時維持原本的 quality 顯示
+                                pass
+
+                            duplicates.append({
+                                "url": url,
+                                "title": title,
+                                "filePath": existing_file,
+                                "quality": display_quality,
+                                "format": format_type
+                            })
+                    except Exception as e:
+                        download_console(f"檢查影片重複時出錯 (url={url}): {e}", level=LogLevel.WARNING)
+                        continue
+
+            result = {
+                "folderExists": folder_exists,
+                "duplicates": duplicates,
+            }
+            return json.dumps(result, ensure_ascii=False)
+        except Exception as e:
+            download_console(f"檢查播放清單資料夾時出錯: {e}", level=LogLevel.ERROR)
+            return json.dumps({"folderExists": False, "duplicates": []}, ensure_ascii=False)
+    
+    @Slot(str, result=str)
+    def delete_existing_files(self, file_paths_json):
+        """批量刪除已存在的檔案（僅允許刪除下載目錄內的檔案）
+        file_paths_json: JSON 字串陣列，包含要刪除的檔案路徑
+        返回 JSON 字串：{"success": [str, ...], "failed": [{"path": str, "error": str}, ...]}
+        """
+        try:
+            file_paths = json.loads(file_paths_json or '[]')
+            if not isinstance(file_paths, list):
+                return json.dumps({"success": [], "failed": [{"path": "", "error": "參數格式錯誤"}]})
+            
+            settings = self.settings_manager.load_settings()
+            resolved_download_dir = get_download_path(self.root_dir, self.settings_manager)
+            download_dir_real = os.path.realpath(resolved_download_dir)
+            
+            success = []
+            failed = []
+            
+            for file_path in file_paths:
+                if not file_path or not str(file_path).strip():
+                    continue
+                
+                try:
+                    file_path = os.path.normpath(os.path.abspath(str(file_path).strip()))
+                    file_real = os.path.realpath(file_path)
+                    
+                    if not file_real.startswith(download_dir_real):
+                        download_console(f"拒絕刪除：檔案不在下載目錄內: {file_path}", level=LogLevel.WARNING)
+                        failed.append({"path": file_path, "error": "檔案不在下載目錄內"})
+                        continue
+                    
+                    if not os.path.isfile(file_real):
+                        download_console(f"檔案不存在或非檔案，跳過刪除: {file_real}", level=LogLevel.INFO)
+                        success.append(file_path)  # 視為成功（檔案已不存在）
+                        continue
+                    
+                    os.remove(file_real)
+                    download_console(f"已刪除舊檔案: {file_real}", level=LogLevel.INFO)
+                    success.append(file_path)
+                except Exception as e:
+                    download_console(f"刪除檔案失敗 ({file_path}): {e}", level=LogLevel.ERROR)
+                    failed.append({"path": file_path, "error": str(e)})
+            
+            result = {
+                "success": success,
+                "failed": failed
+            }
+            return json.dumps(result, ensure_ascii=False)
+        except Exception as e:
+            download_console(f"批量刪除檔案時出錯: {e}", level=LogLevel.ERROR)
+            return json.dumps({"success": [], "failed": [{"path": "", "error": str(e)}]})
+    
     def _check_file_exists(self, url, quality, format_type, downloads_dir, add_resolution, original_format=None):
         """檢查目標文件是否存在，返回文件路徑（如果存在）
         
@@ -915,22 +1237,14 @@ class Api(QObject):
             import re
             safe_title = re.sub(r'[<>:"/\\|?*]', '', title)
             
-            # 規範化格式和畫質
-            fmt = (format_type or '').strip().lower()
-            if fmt in ('mp3', 'aac', 'flac', 'wav', 'audio'):
+            # 規範化格式和畫質（format_type 可能是 '音訊'/'影片' 或 'mp3'/'mp4' 等）
+            fmt = (original_format or format_type or '').strip().lower()
+            if fmt in ('mp3', 'aac', 'flac', 'wav', 'audio', '音訊'):
                 normalized_format = '音訊'
-                # 使用原始格式，如果沒有則預設為 mp3
-                if original_format:
-                    ext = original_format.strip().lower()
-                else:
-                    ext = 'mp3'
+                ext = fmt if fmt in ('mp3', 'aac', 'flac', 'wav') else 'mp3'
             else:
                 normalized_format = '影片'
-                # 使用原始格式，如果沒有則預設為 mp4
-                if original_format:
-                    ext = original_format.strip().lower()
-                else:
-                    ext = 'mp4'
+                ext = fmt if fmt in ('mp4', 'mkv', 'webm') else 'mp4'
             
             q = (quality or '').strip()
             import re as re_module
@@ -953,15 +1267,13 @@ class Api(QObject):
                     height = qnum
             
             # 根據設定構建可能的文件名
-            if add_resolution:
-                if normalized_format == '音訊':
-                    # 音訊格式：標題_320kbps.{ext}
-                    possible_files.append(f"{safe_title}_{qnum}kbps.{ext}")
-                else:
-                    # 影片格式：標題_1080p.{ext}
-                    possible_files.append(f"{safe_title}_{height}p.{ext}")
+            if normalized_format == '音訊':
+                # mp3 等音訊：不論 add_resolution，都檢查兩種檔名（下載時可能不同設定）
+                possible_files.append(f"{safe_title}.{ext}")
+                possible_files.append(f"{safe_title}_{qnum}kbps.{ext}")
+            elif add_resolution:
+                possible_files.append(f"{safe_title}_{height}p.{ext}")
             else:
-                # 預設格式：標題.{ext}
                 possible_files.append(f"{safe_title}.{ext}")
             
             # 檢查文件是否存在（只檢查相同格式）
@@ -969,6 +1281,17 @@ class Api(QObject):
                 file_path = os.path.join(downloads_dir, filename)
                 if os.path.exists(file_path):
                     return file_path
+            
+            # 音訊：若精確檔名未命中，掃描資料夾內同副檔名且檔名以標題開頭的檔案
+            if normalized_format == '音訊' and safe_title:
+                try:
+                    for name in os.listdir(downloads_dir):
+                        if name.lower().endswith(f'.{ext}') and os.path.isfile(os.path.join(downloads_dir, name)):
+                            base = os.path.splitext(name)[0]
+                            if base == safe_title or base.startswith(safe_title + '_'):
+                                return os.path.join(downloads_dir, name)
+                except OSError:
+                    pass
             
             # 只檢查用戶指定的格式，不檢查其他擴展名
             # 這樣可以允許用戶下載同一影片的不同格式（例如已有 mp4，可以再下載 mp3）
@@ -981,28 +1304,43 @@ class Api(QObject):
     @Slot(str, result=str)
     def start_batch_download(self, video_data_json):
         """批量下載（主要給播放清單使用）
-        video_data_json: JSON字串，格式：
-          [
-            { "id": 123, "url": "...", "quality": "1080p", "format": "mp4" },
-            ...
-          ]
+        video_data_json 支援兩種格式：
+        1. 陣列：[{ "id", "url", "quality", "format" }, ...]
+        2. 物件：{ "playlistTitle": "播放清單名稱", "playlistGroupId": "...", "videos": [...] }  # 下載到集中子資料夾
 
         - **重要**：`id` 會直接當作任務ID回報進度/完成，必須與前端佇列對齊。
         """
         try:
-            video_list = json.loads(video_data_json or '[]')
+            payload = json.loads(video_data_json or '[]')
+            playlist_subfolder = None
+            playlist_group_id = None
+            if isinstance(payload, dict):
+                playlist_subfolder = payload.get('playlistTitle') or payload.get('playlist_title')
+                playlist_group_id = payload.get('playlistGroupId') or payload.get('playlist_group_id')
+                video_list = payload.get('videos') or []
+            else:
+                video_list = payload if isinstance(payload, list) else []
+
             if not isinstance(video_list, list):
-                return "批量下載失敗: 參數格式錯誤（需為 JSON 陣列）"
+                return "批量下載失敗: 參數格式錯誤"
 
             download_console(f"開始批量下載，共 {len(video_list)} 部影片", level=LogLevel.INFO)
+            if playlist_subfolder:
+                subfolder = _sanitize_folder_name(playlist_subfolder)
+                download_console(f"播放清單將下載至子資料夾: {subfolder}", level=LogLevel.INFO)
+            if playlist_group_id:
+                download_console(f"播放清單群組ID: {playlist_group_id}", level=LogLevel.DEBUG)
+                # 記錄播放清單名稱供通知顯示
+                with self._lock:
+                    self.playlist_titles[str(playlist_group_id)] = playlist_subfolder or '播放清單'
 
-            def delayed_start(delay_s, tid, u, q, f):
-                import time
+            def run_one(tid, u, q, f, subfolder=None, pl_group_id=None):
                 try:
-                    if delay_s and delay_s > 0:
-                        time.sleep(delay_s)
-                    # 直接使用前端提供的 task id（不可亂轉換，避免對不到 UI）
-                    self.start_download(int(tid), u, q, f)
+                    # 記錄播放清單群組ID（如果有的話）
+                    if pl_group_id:
+                        with self._lock:
+                            self.task_playlist_groups[str(tid)] = pl_group_id
+                    self._start_download_impl(int(tid), u, q, f, subfolder=subfolder)
                 except Exception as e:
                     download_console(f"批量下載啟動失敗(task_id={tid}): {e}", level=LogLevel.ERROR)
                     try:
@@ -1010,6 +1348,7 @@ class Api(QObject):
                     except Exception:
                         pass
 
+            subfolder = _sanitize_folder_name(playlist_subfolder) if playlist_subfolder else None
             started = 0
             for idx, item in enumerate(video_list):
                 if not isinstance(item, dict):
@@ -1017,17 +1356,14 @@ class Api(QObject):
                 url = (item.get('url') or '').strip()
                 if not url:
                     continue
-                task_id = item.get('id')
-                if task_id is None:
-                    # 若前端未提供，退回用序號（仍維持 int）
-                    task_id = idx
+                raw_id = item.get('id')
+                task_id = int(raw_id) if raw_id is not None else idx
                 quality = item.get('quality', '1080p')
                 format_type = item.get('format', 'mp4')
 
-                # 以背景執行緒做簡單排程，避免一次啟動太多 yt-dlp 實例
                 t = threading.Thread(
-                    target=delayed_start,
-                    args=(idx * 0.5, task_id, url, quality, format_type),
+                    target=run_one,
+                    args=(task_id, url, quality, format_type, subfolder, playlist_group_id),
                     daemon=True,
                 )
                 t.start()
@@ -1037,14 +1373,17 @@ class Api(QObject):
         except Exception as e:
             download_console(f"批量下載失敗: {e}", level=LogLevel.ERROR)
             return f"批量下載失敗: {e}"
-    
+
     @Slot(int, str, str, str, result=str)
     def start_download(self, task_id, url, quality, format_type):
-        """開始下載"""
+        """開始下載（單一影片，使用預設路徑）"""
+        return self._start_download_impl(task_id, url, quality, format_type, subfolder=None)
+
+    def _start_download_impl(self, task_id, url, quality, format_type, subfolder=None):
+        """內部實作：開始下載，可指定播放清單子資料夾"""
         try:
-            download_console(f"[DBG] start_download 進入 task_id={task_id}", level=LogLevel.DEBUG)
+            download_console(f"[DBG] _start_download_impl 進入 task_id={task_id}", level=LogLevel.DEBUG)
             download_console(f"開始下載任務 {task_id}: {url}", level=LogLevel.INFO)
-            # 規範化前端傳入的格式與畫質
             fmt = (format_type or '').strip().lower()
             # 對齊下載器分支：將具體副檔名映射為語義分類
             if fmt in ('mp3', 'aac', 'flac', 'wav', 'audio'):
@@ -1068,18 +1407,23 @@ class Api(QObject):
 
             # 讀取設定中的下載路徑和解析度檔名選項
             settings = self.settings_manager.load_settings()
-            custom_path = settings.get('customDownloadPath', '')
             add_resolution = settings.get('addResolutionToFilename', False)
-            
-            # 決定下載目錄
-            resolved_download_dir = get_download_path(self.root_dir, self.settings_manager)
+
+            # 決定下載目錄（播放清單使用子資料夾集中存放）
+            base_dir = get_download_path(self.root_dir, self.settings_manager)
+            if subfolder:
+                resolved_download_dir = safe_path_join(base_dir, subfolder)
+            else:
+                resolved_download_dir = base_dir
             download_console(f"使用下載路徑: {resolved_download_dir}", level=LogLevel.INFO)
-            
+
             try:
                 os.makedirs(resolved_download_dir, exist_ok=True)
             except Exception as e:
                 download_console(f"創建下載資料夾失敗，改用預設: {e}", level=LogLevel.ERROR)
                 resolved_download_dir = safe_path_join(self.root_dir, 'downloads')
+                if subfolder:
+                    resolved_download_dir = safe_path_join(resolved_download_dir, subfolder)
                 os.makedirs(resolved_download_dir, exist_ok=True)
 
             # 先檢查是否有同名影片正在下載（這個很快，不會阻塞）
@@ -1245,6 +1589,7 @@ class Api(QObject):
                     self.task_download_paths.pop(str(task_id), None)
                     self.task_formats.pop(str(task_id), None)
                     self.task_urls.pop(str(task_id), None)
+                    self.task_playlist_groups.pop(str(task_id), None)
                 download_console(f"用戶取消任務 {task_id}，已清理相關數據", level=LogLevel.INFO)
                 return "已取消下載"
             
@@ -1901,6 +2246,8 @@ class Api(QObject):
     def startYtDlpUpdate(self):
         """由前端呼叫，啟動 yt-dlp 更新（背景執行並回報進度）——對齊舊版行為"""
         def run_update():
+            with self._lock:
+                self._ytdlp_update_in_progress = True
             try:
                 self._eval_js("window.__ofUpdateProgress && window.__ofUpdateProgress(0, '開始更新…');")
                 # 選擇 python 執行檔：優先內嵌，否則使用目前執行環境
@@ -2026,7 +2373,15 @@ class Api(QObject):
                 api_console(f"更新執行失敗: {e}", level=LogLevel.ERROR)
                 safe_msg = str(e).replace('\\', '/')
                 self._eval_js(f"window.__ofUpdateDone && window.__ofUpdateDone(false, '更新過程發生錯誤：{safe_msg}');")
+            finally:
+                with self._lock:
+                    self._ytdlp_update_in_progress = False
         threading.Thread(target=run_update, daemon=True).start()
+
+    def is_ytdlp_update_in_progress(self):
+        """回傳 yt-dlp 是否正在更新中"""
+        with self._lock:
+            return self._ytdlp_update_in_progress
 
     def show_update_dialog(self, version_info):
         """顯示更新對話框（完全對齊舊版樣式與互動）"""
@@ -2126,11 +2481,8 @@ class Api(QObject):
                 iconDiv.innerHTML = '<img src="assets/update.png" alt="update" style="width:24px;height:24px;object-fit:contain;filter:brightness(1);">';
                 const title = document.createElement('h3');
                 title.style.cssText = `margin: 0; color: #e5e7eb; font-size: 20px; font-weight: bold;`;
-                title.textContent = 'yt-dlp 更新提醒';
+                title.textContent = '發現 yt-dlp 新版本';
                 titleDiv.appendChild(iconDiv); titleDiv.appendChild(title);
-                const desc = document.createElement('p');
-                desc.style.cssText = `color: #e5e7eb; margin: 0 0 24px 0; line-height: 1.5; font-size: 16px; font-weight: 600;`;
-                desc.textContent = '發現 yt-dlp 新版本！';
                 const versionDiv = document.createElement('div');
                 versionDiv.style.cssText = `background: #181a20; border-radius: 12px; padding: 18px; margin-bottom: 24px; border: 1px solid #444;`;
                 const currentVersionDiv = document.createElement('div');
@@ -2163,7 +2515,7 @@ class Api(QObject):
                 updateBtn.onmouseout = function(){ this.style.background = '#27ae60'; this.style.transform = 'scale(1)'; this.style.boxShadow = '0 2px 8px rgba(0, 0, 0, 0.2)'; };
                 buttonDiv.appendChild(skipBtn); buttonDiv.appendChild(updateBtn);
                 actionsRow.appendChild(note);
-                dialog.appendChild(titleDiv); dialog.appendChild(desc); dialog.appendChild(versionDiv); dialog.appendChild(question); dialog.appendChild(actionsRow); dialog.appendChild(buttonDiv);
+                dialog.appendChild(titleDiv); dialog.appendChild(versionDiv); dialog.appendChild(question); dialog.appendChild(actionsRow); dialog.appendChild(buttonDiv);
                 overlay.appendChild(dialog); document.body.appendChild(overlay);
                 updateBtn.addEventListener('click', function(){ overlay.remove(); window.__executeUpdate(); });
                 skipBtn.addEventListener('click', function(){ overlay.remove(); });

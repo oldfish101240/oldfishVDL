@@ -1,6 +1,7 @@
 {
+  "enableNotifications": true,
   "addResolutionToFilename": false,
   "customDownloadPath": "",
-  "enableNotifications": true,
-  "maxConcurrentDownloads": 3
+  "maxConcurrentDownloads": 3,
+  "playlistNotificationMode": "complete"
 }
