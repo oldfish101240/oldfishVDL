@@ -1,0 +1,14 @@
+build/
+dist/
+downloads/
+download-old/
+downloads-OLD/
+old_things/
+.vs/
+settings.txt
+已放棄/
+__pycache__/
+thumb_cache/
+test_format_system.py
+python_embed/
+ffmpeg-7.1.1-essentials_build/
