@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>oldfish影片下載器</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+  <a class="skip-link" href="#feature-home">跳至主要內容</a>
+
+  <!-- 頂端導覽 -->
+  <header class="site-header">
+    <nav class="site-nav" aria-label="主要導覽">
+
+      <a class="nav-brand" href="#">oldfish影片下載器</a>
+
+      <ul class="nav-links">
+        <li>
+          <a
+            class="nav-github"
+            href="https://github.com/oldfish101240/oldfish-Video-Downloader"
+            aria-label="GitHub 儲存庫"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 98 96" aria-hidden="true" focusable="false">
+              <path
+                fill="currentColor"
+                fill-rule="evenodd"
+                clip-rule="evenodd"
+                d="M48.854 0C21.839 0 0 22 0 49.217c0 21.756 13.993 40.172 33.405 46.69 2.427.49 3.316-1.059 3.316-2.362 0-1.141-.08-5.052-.08-9.127-13.59 2.934-16.42-5.867-16.42-5.867-2.184-5.704-5.42-7.17-5.42-7.17-4.448-3.015.324-3.015.324-3.015 4.934.326 7.523 5.052 7.523 5.052 4.367 7.496 11.404 5.378 14.235 4.074.404-3.178 1.699-5.378 3.074-6.6-10.839-1.141-22.243-5.378-22.243-24.283 0-5.378 1.94-9.778 5.014-13.2-.485-1.222-2.184-6.275.486-13.038 0 0 4.125-1.304 13.426 5.052a46.97 46.97 0 0 1 12.214-1.63c4.125 0 8.33.571 12.213 1.63 9.302-6.356 13.427-5.052 13.427-5.052 2.67 6.763.97 11.816.485 13.038 3.155 3.422 5.015 7.822 5.015 13.2 0 18.905-11.404 23.06-22.324 24.283 1.78 1.548 3.316 4.481 3.316 9.126 0 6.6-.08 11.896-.08 13.526 0 1.304.89 2.853 3.316 2.364 19.412-6.52 33.405-24.935 33.405-46.691C97.707 22 75.788 0 48.854 0z"
+              />
+            </svg>
+          </a>
+        </li>
+        <li>
+          <a class="nav-cta" href="https://github.com/oldfish101240/oldfish-Video-Downloader/releases/download/v2.1.0/oldfish_downloader-Release.7z">取得最新版本</a>
+        </li>
+      </ul>
+
+    </nav>
+  </header>
+
+  <!-- 首屏 -->
+  <section class="hero" aria-labelledby="hero-title">
+    <div class="hero-inner">
+      <img src="../icon.png" alt="" class="hero-icon" width="96" height="96" decoding="async">
+      <h1 id="hero-title" class="hero-title">oldfish影片下載器</h1>
+      <p class="hero-tagline">一個可以輕鬆下載 YouTube 影片的軟體</p>
+      <div class="hero-actions">
+        <a class="btn btn-primary" href="https://github.com/oldfish101240/oldfish-Video-Downloader/releases/download/v2.1.0/oldfish_downloader-Release.7z">取得最新版本</a>
+      </div>
+    </div>
+    <a class="scroll-cue" href="#feature-home" aria-label="向下滑動瀏覽更多">
+      <span class="scroll-cue-text">向下滑動</span>
+      <svg class="scroll-cue-arrow" width="28" height="28" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+        <path d="M6 9l6 6 6-6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+    </a>
+  </section>
+
+  <!-- 功能介紹：每區為獨立 article，類名沿用 .feature-* 以利樣式重用 -->
+  <main id="main" class="features" aria-label="功能介紹">
+
+    <article id="feature-home" class="feature reveal feature--left">
+      <div class="feature-copy">
+        <h2 class="feature-headline">貼上網址，從主頁開始</h2>
+        <p class="feature-body">在首頁輸入欲下載的影片或播放清單網址，按下「下載」後即可開始。</p>
+      </div>
+      <div class="feature-shot">
+        <button type="button" class="shot-trigger" data-lightbox-src="assets/screenshot/home.jpg" data-lightbox-alt="應用程式主頁：輸入影片網址與下載按鈕" aria-label="放大檢視主頁截圖">
+          <img src="assets/screenshot/home.jpg" alt="" width="1200" height="750" loading="lazy" decoding="async">
+        </button>
+      </div>
+    </article>
+
+    <article id="feature-single" class="feature reveal feature--right">
+      <div class="feature-copy">
+        <h2 class="feature-headline">選擇畫質與格式</h2>
+        <p class="feature-body">下載影片時，可依需求選擇畫質與輸出格式，再開始下載。</p>
+      </div>
+      <div class="feature-shot">
+        <button type="button" class="shot-trigger" data-lightbox-src="assets/screenshot/download_single.jpg" data-lightbox-alt="單一影片下載：畫質與格式選擇" aria-label="放大檢視單一影片截圖">
+          <img src="assets/screenshot/download_single.jpg" alt="" width="1200" height="750" loading="lazy" decoding="async">
+        </button>
+      </div>
+    </article>
+
+    <article id="feature-playlist" class="feature reveal feature--left">
+      <div class="feature-copy">
+        <h2 class="feature-headline">播放清單：一次下載多部影片</h2>
+        <p class="feature-body">下載整個播放清單輕鬆不費力。可預覽清單中的影片、勾選要下載的項目，並依項目調整畫質與格式，再開始下載。</p>
+      </div>
+      <div class="feature-shot">
+        <button type="button" class="shot-trigger" data-lightbox-src="assets/screenshot/download_playlist.jpg" data-lightbox-alt="播放清單下載：列表與套用選項" aria-label="放大檢視播放清單截圖">
+          <img src="assets/screenshot/download_playlist.jpg" alt="" width="1200" height="750" loading="lazy" decoding="async">
+        </button>
+      </div>
+    </article>
+
+    <article id="feature-queue" class="feature reveal feature--right">
+      <div class="feature-copy">
+        <h2 class="feature-headline">佇列：進度一目了然</h2>
+        <p class="feature-body">所有下載工作都會出現在佇列中，方便同時查看多部影片的下載進度。</p>
+      </div>
+      <div class="feature-shot">
+        <button type="button" class="shot-trigger" data-lightbox-src="assets/screenshot/quene.jpg" data-lightbox-alt="下載佇列與進度顯示" aria-label="放大檢視佇列截圖">
+          <img src="assets/screenshot/quene.jpg" alt="" width="1200" height="750" loading="lazy" decoding="async">
+        </button>
+      </div>
+    </article>
+
+    <article id="feature-settings" class="feature reveal feature--left">
+      <div class="feature-copy">
+        <h2 class="feature-headline">設定：依習慣調整</h2>
+        <p class="feature-body">可依照個人習慣、電腦配置自訂軟體的各項設定。</p>
+      </div>
+      <div class="feature-shot">
+        <button type="button" class="shot-trigger" data-lightbox-src="assets/screenshot/settings.jpg" data-lightbox-alt="設定：通知、路徑與其他選項" aria-label="放大檢視設定截圖">
+          <img src="assets/screenshot/settings.jpg" alt="" width="1200" height="750" loading="lazy" decoding="async">
+        </button>
+      </div>
+    </article>
+
+  </main>
+
+  <!-- 頁尾 -->
+  <footer class="site-footer">
+    <div class="footer-inner">
+      <p class="footer-version">oldfish影片下載器</p>
+      <p class="footer-links">
+        <a href="https://github.com/oldfish101240/oldfish-Video-Downloader">GitHub 頁面</a>
+        <span class="footer-dot" aria-hidden="true">·</span>
+        <a href="https://github.com/oldfish101240/oldfish-Video-Downloader/issues">回報問題</a>
+      </p>
+      <p class="footer-meta">本軟體供學習與個人研究用途；請遵守相關法律與網站服務條款。</p>
+      <p class="footer-license">© 2026 老魚oldfish. · 本頁面由羽希協助設計❤</p>
+    </div>
+  </footer>
+
+  <!-- 燈箱 -->
+  <div id="lightbox" class="lightbox" role="dialog" aria-modal="true" aria-label="放大檢視" hidden>
+    <button type="button" class="lightbox-backdrop" tabindex="-1" aria-label="關閉"></button>
+    <div class="lightbox-inner">
+      <img class="lightbox-img" src="" alt="">
+    </div>
+  </div>
+
+  <script src="main.js" defer></script>
+
+</body>
+</html>
