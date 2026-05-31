@@ -23,7 +23,7 @@
 
 ## 如何安裝
 1. 下載[最新版本](https://github.com/oldfish101240/oldfish-Video-Downloader/releases/latest)  
-2. 解壓縮 oldfish_downloader_vX.X.X.7z  
+2. 解壓縮 oldfish_downloader_Release.7z  
 3. 打開oldfishVDL.exe
 4. 完成！
 
