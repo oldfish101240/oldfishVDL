@@ -14,9 +14,9 @@
 </div>
 
 ## 特色 
-- 支援下載最高4K畫質
+- 支援下載最高 4K 畫質
 - 同時下載多部影片
-- 下載shorts短片
+- 下載 shorts 短片
 - 下載音軌
 - 操作簡單
 - 完全免費！
@@ -24,11 +24,11 @@
 ## 如何安裝
 1. 下載[最新版本](https://github.com/oldfish101240/oldfish-Video-Downloader/releases/latest)  
 2. 解壓縮 oldfish_downloader_Release.7z  
-3. 打開oldfishVDL.exe
+3. 打開 oldfishVDL.exe
 4. 完成！
 
 ## 如何使用
-1. 打開oldfishVDL.exe  
+1. 打開 oldfishVDL.exe  
 2. 輸入欲下載的影片或播放清單網址
 3. 按下"下載"按鈕  
 4. 選擇正確畫質、檔案格式   
@@ -38,7 +38,7 @@
 
 ## 系統需求
 - Windows 10/11 64bit
-- 最少1GB以上的儲存空間
+- 最少 1GB 以上的儲存空間
 
 ## 貢獻
 ### 回報 Bug
@@ -69,5 +69,5 @@
 開發者對於使用本軟體所造成的任何損失、法律責任或後果，概不負責。    
 
 ##  版權和許可
-軟體、程式碼及文件版權由[老魚oldfish](https://github.com/oldfish101240)所有。軟體依據 [MIT License](LICENSE)發布。  
+軟體、程式碼及文件版權由 [老魚oldfish](https://github.com/oldfish101240) 所有。軟體依據 [MIT License](LICENSE) 發布。  
 Copyright (c) 2026 老魚oldfish
