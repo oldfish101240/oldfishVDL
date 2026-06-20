@@ -1,0 +1,566 @@
+/**
+ * oldfish 設計 token — 結構色在此定義，主色調衍生色由 theme.js 動態寫入
+ */
+:root {
+    /* 外觀模式基底色（預覽與整體背景共用） */
+    --of-mode-bg-dark: #16181d;
+    --of-mode-bg-light: #e4e6eb;
+
+    /* 結構（深色介面基底） */
+    --of-bg: var(--of-mode-bg-dark);
+    --of-bg-elevated: #1a1d23;
+    --of-bg-card: #2b2e37;
+    --of-bg-input: #1a1d23;
+    --of-bg-deep: #121418;
+    --of-surface: #23262f;
+    --of-surface-2: #1c1f26;
+    --of-surface-popup: #1f242b;
+    --of-border: #444;
+    --of-border-subtle: #333;
+    --of-border-strong: #3a3f4a;
+    --of-border-panel: #3d4450;
+    --of-text: #e5e7eb;
+    --of-text-secondary: #b0b0b0;
+    --of-text-muted: #aaa;
+    --of-text-muted-2: #9ca3af;
+    --of-text-dim: #888;
+    --of-text-inverse: #f3f4f6;
+    --of-scrollbar-thumb: #3a3f4a;
+    --of-scrollbar-thumb-hover: #4a4f59;
+    --of-scrollbar-track: #121418;
+    --of-disabled: #666;
+    --of-shadow: rgba(0, 0, 0, 0.3);
+    --of-shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.22);
+    --of-shadow-md: 0 4px 14px rgba(0, 0, 0, 0.28);
+    --of-shadow-lg: 0 8px 28px rgba(0, 0, 0, 0.35);
+    --of-shadow-sidebar: 2px 0 10px rgba(0, 0, 0, 0.35);
+    --of-overlay: rgba(0, 0, 0, 0.45);
+    --of-on-accent: #ffffff;
+
+    /* 主色調預設（theme.js 會覆寫整組衍生色） */
+    --of-accent: #2ecc71;
+    --of-accent-hover: #27ae60;
+    --of-accent-dark: #219150;
+    --of-accent-rgb: 46, 204, 113;
+    --of-accent-hover-rgb: 39, 174, 96;
+    --of-accent-light: #9af0bf;
+    --of-accent-lighter: #6ee7a8;
+    --of-accent-active: #257a52;
+    --of-accent-muted-bg: #1d3227;
+    --of-accent-muted-bg-hover: #244232;
+    --of-accent-muted-border: #2f5a42;
+    --of-accent-muted-border-hover: #3f7556;
+    --of-accent-muted-text: #d8f3e3;
+    --of-accent-on-muted: #ecfdf5;
+    --of-accent-on-muted-2: #d1fae5;
+    --of-accent-surface-tint: #1e2a24;
+    --of-accent-surface-tint-2: #1a2520;
+    --of-accent-completed-bg: #e8f5e9;
+    --of-accent-completed-bg-2: #f0fdf4;
+    --of-accent-completed-border: rgba(var(--of-accent-rgb), 0.5);
+    --of-accent-completed-border-2: #b7ebc9;
+    --of-accent-completed-text: #15803d;
+    --of-accent-soft: rgba(var(--of-accent-rgb), 0.25);
+    --of-accent-soft-22: rgba(var(--of-accent-rgb), 0.22);
+    --of-accent-soft-16: rgba(var(--of-accent-rgb), 0.16);
+    --of-accent-soft-14: rgba(var(--of-accent-rgb), 0.14);
+    --of-accent-soft-08: rgba(var(--of-accent-rgb), 0.08);
+    --of-accent-focus: rgba(var(--of-accent-rgb), 0.2);
+    --of-accent-focus-30: rgba(var(--of-accent-rgb), 0.3);
+    --of-accent-glow: rgba(var(--of-accent-rgb), 0.4);
+    --of-accent-glow-30: rgba(var(--of-accent-rgb), 0.3);
+    --of-accent-border-soft: rgba(var(--of-accent-hover-rgb), 0.26);
+
+    /* 面板／互動（theme.js 覆寫） */
+    --of-hover-neutral: #3a4150;
+    --of-panel-bg: #171b24;
+    --of-panel-bg-top: #1a2130;
+    --of-panel-bg-tools: #171f2d;
+    --of-panel-bg-body: #151922;
+    --of-panel-bg-row: #1b2230;
+    --of-panel-bg-row-hover: #212b3b;
+    --of-panel-border: #2b3341;
+    --of-panel-border-sub: #2c3645;
+    --of-panel-border-mid: #283244;
+    --of-panel-border-row: #303a49;
+    --of-panel-border-row-hover: #4a5c78;
+    --of-panel-text-title: #f8fafc;
+    --of-panel-text-desc: #a9b6cb;
+    --of-panel-text-master: #dbe6f7;
+    --of-panel-text-file: #eef2ff;
+    --of-panel-text-path: #94a3b8;
+    --of-dev-cmd-match: #4d5564;
+    --of-dev-cmd-rest: #93c5fd;
+    --of-dev-cmd-border: #2a2f38;
+
+    /* 語意別名（彈窗等沿用舊變數名） */
+    --popup-theme-green: var(--of-accent-hover);
+    --popup-theme-green-hover: var(--of-accent-dark);
+    --popup-theme-green-soft: var(--of-accent-soft);
+    --popup-surface-border: var(--of-accent-border-soft);
+}
+
+/* 公用排版／文字（取代零散 inline color） */
+.of-text { color: var(--of-text); }
+.of-text-secondary { color: var(--of-text-secondary); }
+.of-text-muted { color: var(--of-text-muted); }
+.of-text-dim { color: var(--of-text-dim); }
+.of-text-accent { color: var(--of-accent); }
+.of-text-accent-light { color: var(--of-accent-light); }
+.of-bg-surface { background: var(--of-surface); color: var(--of-text); }
+.of-link-accent { color: var(--of-accent); text-decoration: none; }
+.of-link-accent:hover { color: var(--of-accent-hover); }
+
+.settings-page-title {
+    margin: 0 0 30px 0;
+    color: var(--of-text);
+    font-size: 28px;
+}
+.settings-label-block {
+    display: block;
+    margin-bottom: 8px;
+    color: var(--of-text);
+    font-size: 16px;
+}
+.settings-label-block-sm {
+    display: block;
+    margin-bottom: 4px;
+    color: var(--of-text);
+    font-size: 16px;
+}
+.settings-input-inline {
+    width: 140px;
+    padding: 10px 12px;
+    border: 1px solid var(--of-border);
+    border-radius: 8px;
+    background: var(--of-bg-elevated);
+    color: var(--of-text);
+    font-size: 14px;
+}
+.settings-input-flex {
+    flex: 1;
+    padding: 10px 12px;
+    border: 1px solid var(--of-border);
+    border-radius: 8px;
+    background: var(--of-bg-elevated);
+    color: var(--of-text);
+    font-size: 14px;
+}
+.about-info-line {
+    color: var(--of-text);
+    font-size: 15px;
+    margin-bottom: 8px;
+}
+.about-footer-text {
+    text-align: center;
+    color: var(--of-text-dim);
+    font-size: 12px;
+    margin-top: 24px;
+}
+.loading-panel {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: var(--of-surface);
+    color: var(--of-text);
+    padding: 16px 22px;
+    border-radius: 12px;
+    box-shadow: 0 4px 24px rgba(0, 0, 0, 0.65);
+    font-size: 16px;
+}
+
+/* ========== 淺色模式：偏灰、低對比（非純白） ========== */
+body.light-theme {
+    color-scheme: light;
+    color: var(--of-text);
+    --of-bg: var(--of-mode-bg-light);
+    --of-bg-elevated: #eceef2;
+    --of-bg-card: #eef0f4;
+    --of-bg-input: #e8eaef;
+    --of-bg-deep: #d8dce3;
+    --of-surface: #eceef2;
+    --of-surface-2: #e0e3e9;
+    --of-surface-popup: #eceef2;
+    --of-border: #c5cad3;
+    --of-border-subtle: #d2d7e0;
+    --of-border-strong: #b8bec8;
+    --of-border-panel: #c5cad3;
+    --of-text: #2d3340;
+    --of-text-secondary: #525a68;
+    --of-text-muted: #6b7380;
+    --of-text-muted-2: #848c9a;
+    --of-text-dim: #757d8c;
+    --of-text-inverse: #f3f4f6;
+    --of-scrollbar-thumb: #b8bec8;
+    --of-scrollbar-thumb-hover: #a8afb9;
+    --of-scrollbar-track: #d8dce3;
+    --of-shadow: rgba(30, 36, 48, 0.1);
+    --of-shadow-sm: 0 2px 8px rgba(30, 36, 48, 0.08);
+    --of-shadow-md: 0 4px 14px rgba(30, 36, 48, 0.11);
+    --of-shadow-lg: 0 8px 24px rgba(30, 36, 48, 0.13);
+    --of-shadow-sidebar: 2px 0 10px rgba(30, 36, 48, 0.08);
+    --of-overlay: rgba(30, 36, 48, 0.38);
+    --of-panel-bg: #eceef2;
+    --of-panel-bg-top: #e4e7ed;
+    --of-panel-bg-tools: #e8ebf0;
+    --of-panel-bg-body: #eceef2;
+    --of-panel-bg-row: #e6e9ef;
+    --of-panel-bg-row-hover: #dfe3ea;
+    --of-panel-border: #c9ced8;
+    --of-panel-border-sub: #d2d7e0;
+    --of-panel-border-mid: #ccd1db;
+    --of-panel-border-row: #c5cad3;
+    --of-panel-border-row-hover: #b8bec8;
+    --of-panel-text-title: #2d3340;
+    --of-panel-text-desc: #525a68;
+    --of-panel-text-master: #454d5c;
+    --of-panel-text-file: #353b48;
+    --of-panel-text-path: #6b7380;
+    --of-dev-cmd-match: #848c9a;
+    --of-dev-cmd-border: #d2d7e0;
+    --of-hover-neutral: #d0d5de;
+    --popup-overlay-bg: rgba(30, 36, 48, 0.32);
+    --popup-shadow: 0 12px 32px rgba(30, 36, 48, 0.14);
+}
+
+body.light-theme,
+body.light-theme .container,
+body.light-theme .main {
+    background: var(--of-bg);
+    color: var(--of-text);
+}
+
+body.light-theme .sidebar {
+    background: var(--of-surface);
+    box-shadow: var(--of-shadow-sidebar);
+}
+
+body.light-theme .nav-item:not(.selected),
+body.light-theme .nav-text {
+    color: var(--of-text);
+}
+
+body.light-theme .search-input,
+body.light-theme .dev-cmd-input-shell,
+body.light-theme .custom-select-header,
+body.light-theme .custom-select-options,
+body.light-theme .queue-item,
+body.light-theme .queue-playlist-card,
+body.light-theme .modal,
+body.light-theme .video-modal,
+body.light-theme .settings-container {
+    background: var(--of-bg-card);
+    border-color: var(--of-border);
+    color: var(--of-text);
+    box-shadow: var(--of-shadow-sm);
+}
+
+body.light-theme .settings-section {
+    background: var(--of-surface-2);
+}
+
+body.light-theme .settings-section-title,
+body.light-theme .video-modal-title {
+    color: var(--of-accent-hover);
+}
+
+body.light-theme .settings-checkbox-label,
+body.light-theme .video-modal-label,
+body.light-theme .queue-playlist-card-title,
+body.light-theme .custom-select-option {
+    color: var(--of-text);
+}
+
+body.light-theme .queue-playlist-video-item {
+    background: var(--of-surface-2);
+}
+
+body.light-theme .queue-item,
+body.light-theme .queue-playlist-card {
+    box-shadow: var(--of-shadow-sm);
+}
+body.light-theme .queue-item:hover,
+body.light-theme .queue-playlist-card:hover {
+    box-shadow: var(--of-shadow-md);
+}
+body.light-theme .queue-bottom,
+body.light-theme .settings-fixed-bottom {
+    box-shadow: var(--of-shadow-md);
+}
+body.light-theme .sidebar .nav-item:hover {
+    box-shadow: 0 2px 8px rgba(30, 36, 48, 0.08);
+}
+body.light-theme .dev-cmd-suggest-list {
+    box-shadow: var(--of-shadow-md);
+}
+body.light-theme .queue-item-action-btn:hover:not(:disabled) {
+    background: rgba(15, 23, 42, 0.06);
+}
+body.light-theme .loading-panel {
+    box-shadow: 0 8px 28px rgba(15, 23, 42, 0.15);
+}
+body.light-theme .playlist-modal,
+body.light-theme .app-modal-surface,
+body.light-theme .modal {
+    background: var(--of-surface);
+    color: var(--of-text);
+    border-color: var(--of-border);
+}
+body.light-theme .playlist-modal-title,
+body.light-theme .modal-title {
+    color: var(--of-accent-hover);
+}
+body.light-theme .playlist-modal-subtitle,
+body.light-theme .modal-msg {
+    color: var(--of-text-secondary);
+}
+body.light-theme .playlist-video-item,
+body.light-theme .playlist-video-row {
+    background: var(--of-bg-elevated);
+    border-color: var(--of-border);
+}
+
+/* ========== 淺色模式：UI 圖示適配（淺色圖示 → 深色） ========== */
+body.light-theme .of-app-icon {
+    filter: brightness(0) saturate(100%);
+    opacity: 0.72;
+}
+body.light-theme .sidebar .nav-item.selected .of-app-icon,
+body.light-theme .sidebar .nav-item.selected img.of-app-icon {
+    filter: brightness(0) invert(1);
+    opacity: 1;
+}
+body.light-theme .sidebar .menu-btn .of-app-icon,
+body.light-theme .sidebar .menu-btn img.of-app-icon {
+    opacity: 0.82;
+}
+body.light-theme .queue-item-action-btn .of-app-icon,
+body.light-theme .queue-item-action-btn img.of-app-icon {
+    opacity: 0.7;
+}
+body.light-theme .queue-item-action-btn:hover:not(:disabled) .of-app-icon,
+body.light-theme .queue-item-action-btn:hover:not(:disabled) img.of-app-icon {
+    opacity: 0.9;
+}
+body.light-theme .queue-item-action-btn:disabled .of-app-icon,
+body.light-theme .queue-item-action-btn:disabled img.of-app-icon {
+    filter: brightness(0) saturate(100%);
+    opacity: 0.35;
+}
+/* 品牌標題文字：淺色模式改深色字（左側 icon.png 不反相） */
+body.light-theme .title-brand-text {
+    color: var(--of-text);
+    text-shadow: none;
+}
+body.light-theme .title-brand-icon {
+    filter: drop-shadow(0 2px 8px rgba(30, 36, 48, 0.12));
+}
+
+/* ========== 外觀設定面板 ========== */
+.appearance-panel {
+    margin-top: 8px;
+    padding: 16px;
+    border-radius: 12px;
+    border: 1px solid var(--of-border);
+    background: var(--of-bg-elevated);
+    box-shadow: var(--of-shadow-sm);
+}
+/* 外觀：深色／淺色各一張卡片（預覽 + 文字） */
+.appearance-mode-matrix {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    margin-bottom: 16px;
+}
+.appearance-mode-card {
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    width: 100%;
+    padding: 0;
+    border: 2px solid var(--of-border);
+    border-radius: 12px;
+    background: var(--of-bg-card);
+    cursor: pointer;
+    overflow: hidden;
+    text-align: center;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+.appearance-mode-card:hover {
+    border-color: var(--of-border-strong);
+}
+.appearance-mode-card.active {
+    border-color: var(--of-accent);
+    box-shadow: 0 0 0 1px var(--of-accent);
+}
+/* 簡化介面預覽：撐滿卡片寬度（勿用 span + 內層 padding） */
+.appearance-ui-preview {
+    display: flex;
+    flex: 1 1 auto;
+    width: 100%;
+    min-width: 0;
+    min-height: 104px;
+    height: 104px;
+    overflow: hidden;
+    border: none;
+    border-radius: 10px 10px 0 0;
+    box-shadow: none;
+    pointer-events: none;
+    box-sizing: border-box;
+}
+.appearance-ui-preview--dark {
+    background: var(--of-mode-bg-dark);
+    --preview-ui-sidebar: #23262f;
+    --preview-ui-main: #16181d;
+    --preview-ui-surface: #1a1d23;
+    --preview-ui-line: rgba(229, 231, 235, 0.14);
+    --preview-ui-nav-idle: rgba(229, 231, 235, 0.08);
+    --preview-ui-border: rgba(255, 255, 255, 0.06);
+}
+.appearance-ui-preview--light {
+    background: var(--of-mode-bg-light);
+    --preview-ui-sidebar: #eceef2;
+    --preview-ui-main: #e4e6eb;
+    --preview-ui-surface: #eef0f4;
+    --preview-ui-line: rgba(45, 51, 64, 0.18);
+    --preview-ui-nav-idle: rgba(45, 51, 64, 0.08);
+    --preview-ui-border: rgba(30, 36, 48, 0.1);
+}
+.appearance-ui-sidebar {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: 7px;
+    flex: 0 0 24%;
+    max-width: 36px;
+    min-width: 28px;
+    padding: 12px 5px;
+    background: var(--preview-ui-sidebar);
+    border-right: 1px solid var(--preview-ui-border);
+    box-sizing: border-box;
+}
+.appearance-ui-nav {
+    display: block;
+    width: 100%;
+    height: 7px;
+    border-radius: 4px;
+    background: var(--preview-ui-nav-idle);
+    flex-shrink: 0;
+}
+.appearance-ui-nav--active {
+    background: var(--preview-accent, var(--of-accent));
+    box-shadow: 0 0 4px rgba(var(--of-accent-rgb, 46, 204, 113), 0.45);
+}
+.appearance-ui-main {
+    flex: 1 1 0;
+    display: flex;
+    flex-direction: column;
+    gap: 7px;
+    width: 0;
+    padding: 10px 10px 10px 8px;
+    background: var(--preview-ui-main);
+    min-width: 0;
+    box-sizing: border-box;
+}
+.appearance-ui-toolbar {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    width: 100%;
+}
+.appearance-ui-search {
+    flex: 1 1 0;
+    display: block;
+    width: 0;
+    min-width: 0;
+    height: 12px;
+    border-radius: 4px;
+    background: var(--preview-ui-surface);
+    border: 1px solid var(--preview-ui-border);
+}
+.appearance-ui-btn {
+    flex: 0 0 28px;
+    display: block;
+    width: 28px;
+    height: 12px;
+    border-radius: 4px;
+    background: var(--preview-accent, var(--of-accent));
+    box-shadow: 0 1px 4px rgba(var(--of-accent-rgb, 46, 204, 113), 0.35);
+}
+.appearance-ui-card {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: 5px;
+    width: 100%;
+    padding: 7px 8px;
+    border-radius: 5px;
+    background: var(--preview-ui-surface);
+    border: 1px solid var(--preview-ui-border);
+    box-sizing: border-box;
+}
+.appearance-ui-line {
+    display: block;
+    width: 100%;
+    height: 4px;
+    border-radius: 2px;
+    background: var(--preview-ui-line);
+}
+.appearance-ui-line--mid {
+    width: 85%;
+}
+.appearance-mode-card-label {
+    display: block;
+    padding: 10px 8px 12px;
+    font-size: 15px;
+    font-weight: 600;
+    border-top: 1px solid transparent;
+}
+/* 標籤區與預覽同色，不受目前 App 主題影響 */
+.appearance-mode-card:has(.appearance-ui-preview--dark) {
+    background: var(--of-mode-bg-dark);
+}
+.appearance-mode-card:has(.appearance-ui-preview--dark) .appearance-mode-card-label {
+    color: rgba(229, 231, 235, 0.92);
+    background: var(--of-mode-bg-dark);
+    border-top-color: rgba(255, 255, 255, 0.08);
+}
+.appearance-mode-card:has(.appearance-ui-preview--light) {
+    background: var(--of-mode-bg-light);
+}
+.appearance-mode-card:has(.appearance-ui-preview--light) .appearance-mode-card-label {
+    color: #2d3340;
+    background: var(--of-mode-bg-light);
+    border-top-color: rgba(45, 51, 64, 0.12);
+}
+.appearance-mode-card.active .appearance-mode-card-label {
+    color: var(--preview-accent, var(--of-accent-hover));
+}
+.appearance-color-hex {
+    font-family: Consolas, 'Courier New', monospace;
+    font-size: 13px;
+    font-weight: 400;
+    color: var(--of-text-muted);
+}
+.appearance-color-label {
+    display: block;
+    margin-bottom: 8px;
+    font-size: 15px;
+    font-weight: 500;
+    color: var(--of-text);
+}
+body.light-theme .theme-preset-btn {
+    box-shadow: var(--of-shadow-sm);
+}
+body.light-theme .theme-preset-btn.active {
+    box-shadow: 0 0 0 2px var(--of-accent), var(--of-shadow-sm);
+}
+/* 深色模式下維持原有圖示亮度 */
+body:not(.light-theme) .sidebar .nav-item img.of-app-icon {
+    filter: brightness(0.85);
+}
+body:not(.light-theme) .queue-item-action-btn img.of-app-icon {
+    filter: brightness(0.85);
+}

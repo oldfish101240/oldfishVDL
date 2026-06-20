@@ -1,7 +1,11 @@
 {
-  "enableNotifications": true,
   "addResolutionToFilename": false,
   "customDownloadPath": "",
+  "enableDevCommands": true,
+  "enableNotifications": true,
+  "hideDevCommandEnableWarning": false,
+  "lightMode": false,
   "maxConcurrentDownloads": 3,
-  "playlistNotificationMode": "complete"
+  "playlistNotificationMode": "complete",
+  "themeColor": "#3498db"
 }

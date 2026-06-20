@@ -60,6 +60,8 @@
             initChannel();
         })();
     </script>
+    <link rel="stylesheet" href="assets/theme-tokens.css">
+    <script src="assets/theme.js"></script>
     <style>
         :root {
             --ease-default: cubic-bezier(0.4, 0, 0.2, 1);
@@ -78,33 +80,33 @@
         body {
             margin: 0;
             font-family: 'Segoe UI', Arial, sans-serif;
-            background: #181a20;
-            color: #e5e7eb;
+            background: var(--of-bg);
+            color: var(--of-text);
             transition: background 0.3s ease, color 0.3s ease;
         }
         /* 全域卷軸樣式（Chromium/QtWebEngine） */
         html, body, .main, .queue-list {
             scrollbar-width: thin; /* Firefox 後備 */
-            scrollbar-color: #4a4f59 #121418; /* 拇指/軌道：現代灰 */
+            scrollbar-color: var(--of-scrollbar-thumb-hover) var(--of-scrollbar-track); /* 拇指/軌道：現代灰 */
         }
         ::-webkit-scrollbar {
             width: 8px;  /* 更纖細 */
             height: 8px;
         }
         ::-webkit-scrollbar-track {
-            background: #121418; /* 深色軌道 */
+            background: var(--of-scrollbar-track); /* 深色軌道 */
         }
         ::-webkit-scrollbar-thumb {
-            background: #3a3f4a; /* 中性深灰 */
+            background: var(--of-scrollbar-thumb); /* 中性深灰 */
             border-radius: 6px;
-            border: 2px solid #121418; /* 與軌道留縫，視覺更輕 */
+            border: 2px solid var(--of-scrollbar-track); /* 與軌道留縫，視覺更輕 */
         }
         ::-webkit-scrollbar-thumb:hover {
-            background: #4a4f59; /* 略亮的灰色，避免過亮 */
-            border-color: #121418;
+            background: var(--of-scrollbar-thumb-hover); /* 略亮的灰色，避免過亮 */
+            border-color: var(--of-scrollbar-track);
         }
         ::-webkit-scrollbar-corner {
-            background: #121418;
+            background: var(--of-scrollbar-track);
         }
         .container {
             display: flex;
@@ -112,7 +114,7 @@
         }
         .sidebar {
             width: 160px;
-            background: #23262f;
+            background: var(--of-surface);
             box-shadow: 2px 0 8px #111;
             display: flex;
             flex-direction: column;
@@ -172,12 +174,17 @@
             box-shadow: 0 4px 12px rgba(0,0,0,0.3);
         }
         .sidebar .nav-item.selected {
-            background: #2ecc71;
-            box-shadow: 0 0 6px #27ae60;
+            background: var(--of-accent);
+            box-shadow: 0 0 6px var(--of-accent-hover);
         }
         .sidebar .nav-item img {
             width: 28px;
             height: 28px;
+        }
+        body:not(.light-theme) .sidebar .nav-item:not(.selected) img {
+            filter: brightness(0.85);
+        }
+        body:not(.light-theme) .sidebar .nav-item.selected img {
             filter: brightness(0.85);
         }
         .sidebar .nav-text {
@@ -186,7 +193,7 @@
             font-weight: 500;
             transition: opacity 0.2s ease-in-out 0.05s;
             opacity: 1;
-            color: #e5e7eb;
+            color: var(--of-text);
             white-space: nowrap;
         }
         .sidebar.collapsed .nav-text {
@@ -197,19 +204,67 @@
             flex: 1;
             display: flex;
             flex-direction: column;
-            align-items: center;
+            align-items: stretch;
             justify-content: flex-start;
             position: relative;
             overflow-y: auto; /* 讓主內容可滾動，配合 sticky 底部區 */
+            min-height: 0;
         }
-        .title-img {
-            margin-top: 60px;
-            margin-bottom: 30px;
-            display: block;
+        .home-center {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            width: 100%;
+            min-height: 0;
+        }
+        .title-brand {
+            margin-top: 0;
+            margin-bottom: 28px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
             margin-left: auto;
             margin-right: auto;
-            width: 540px;
-            filter: drop-shadow(0 0 8px #222);
+            width: fit-content;
+            max-width: 92%;
+            text-align: center;
+        }
+        /* 用 margin 拉開間距（Qt WebView 對 flex gap 支援不穩） */
+        .title-brand-icon {
+            height: 100px;
+            width: auto;
+            flex-shrink: 0;
+            display: block;
+            margin: 0 auto 28px;
+        }
+        .title-brand-text {
+            display: block;
+            margin: 0;
+            padding: 0;
+            font-size: 46px;
+            line-height: 1.1;
+            font-weight: 600;
+            font-family: 'Segoe UI', 'Microsoft JhengHei', 'PingFang TC', sans-serif;
+            color: #f0f2f5;
+            letter-spacing: 0.01em;
+            white-space: nowrap;
+            text-shadow: 0 0 8px rgba(0, 0, 0, 0.35);
+            text-align: center;
+        }
+        .about-brand {
+            margin: 0 auto 16px;
+            width: fit-content;
+            max-width: 88%;
+        }
+        .about-brand .title-brand-icon {
+            height: 84px;
+            margin-bottom: 24px;
+        }
+        .about-brand .title-brand-text {
+            font-size: 38px;
         }
         .search-row {
             display: flex;
@@ -221,9 +276,9 @@
             width: 340px;
             height: 38px;
             border-radius: 8px;
-            border: 1px solid #444;
-            background: #23262f;
-            color: #e5e7eb;
+            border: 1px solid var(--of-border);
+            background: var(--of-surface);
+            color: var(--of-text);
             padding: 0 14px;
             font-size: 16px;
             outline: none;
@@ -239,13 +294,110 @@
             opacity: 0.7;
         }
         .search-input:focus {
-            border-color: #2ecc71;
-            box-shadow: 0 0 0 3px rgba(39, 174, 96, 0.3);
+            border-color: var(--of-accent);
+            box-shadow: 0 0 0 3px rgba(var(--of-accent-hover-rgb), 0.3);
+        }
+
+        /* Dev command：輸入框外殼 + 下方候選列表 */
+        .dev-cmd-input-shell {
+            position: relative;
+            width: 340px;
+            height: 38px;
+            border-radius: 8px;
+            border: 1px solid var(--of-border);
+            background: var(--of-surface);
+            box-sizing: border-box;
+            transition: border-color 0.3s var(--ease-smooth), box-shadow 0.3s var(--ease-smooth);
+            z-index: 1;
+        }
+        .dev-cmd-input-shell.dev-cmd-shell-open {
+            z-index: 8500;
+        }
+        .dev-cmd-input-shell.dev-cmd-shell-focus {
+            border-color: var(--of-accent);
+            box-shadow: 0 0 0 3px rgba(var(--of-accent-hover-rgb), 0.3);
+        }
+        .dev-cmd-input-shell .search-input {
+            position: relative;
+            z-index: 1;
+            width: 100%;
+            height: 100%;
+            margin: 0;
+            border: none !important;
+            background: transparent !important;
+            box-shadow: none !important;
+        }
+        .dev-cmd-input-shell .search-input:focus {
+            border: none !important;
+            box-shadow: none !important;
+        }
+        .dev-cmd-suggest-list {
+            display: none;
+            position: absolute;
+            left: 0;
+            right: 0;
+            top: calc(100% + 4px);
+            max-height: 220px;
+            overflow-y: auto;
+            overflow-x: hidden;
+            background: var(--of-surface-2);
+            border: 1px solid var(--of-border-panel);
+            border-radius: 8px;
+            box-shadow: 0 10px 28px rgba(0, 0, 0, 0.45);
+            text-align: left;
+            font-size: 14px;
+            line-height: 1.35;
+        }
+        .dev-cmd-input-shell.dev-cmd-shell-open .dev-cmd-suggest-list {
+            display: block;
+        }
+        .dev-cmd-suggest-item {
+            padding: 8px 12px;
+            cursor: pointer;
+            color: var(--of-text);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            border-bottom: 1px solid var(--of-dev-cmd-border);
+            transition: background-color 0.2s ease;
+        }
+        .dev-cmd-suggest-item:last-child {
+            border-bottom: none;
+        }
+        .dev-cmd-suggest-item:hover {
+            background: var(--of-hover-neutral);
+            color: var(--of-text-inverse);
+        }
+        .dev-cmd-suggest-item:hover .dev-cmd-suggest-match,
+        .dev-cmd-suggest-item:hover .dev-cmd-suggest-rest {
+            color: var(--of-text-inverse);
+        }
+        .dev-cmd-suggest-item.dev-cmd-suggest-item-active {
+            background: var(--of-accent-active);
+            color: var(--of-accent-on-muted);
+        }
+        .dev-cmd-suggest-item.dev-cmd-suggest-item-active .dev-cmd-suggest-match,
+        .dev-cmd-suggest-item.dev-cmd-suggest-item-active .dev-cmd-suggest-rest {
+            color: var(--of-accent-on-muted);
+        }
+        .dev-cmd-suggest-item .dev-cmd-suggest-match {
+            color: var(--of-dev-cmd-match);
+            font-weight: 400;
+        }
+        .dev-cmd-suggest-item .dev-cmd-suggest-rest {
+            color: var(--of-dev-cmd-rest);
+            font-weight: 600;
+        }
+        .dev-cmd-input-shell--queue {
+            flex: 1 1 280px;
+            min-width: 120px;
+            max-width: 520px;
+            width: auto;
         }
         .download-btn {
             margin-left: 12px;
-            background: #27ae60;
-            color: #fff;
+            background: var(--of-accent-hover);
+            color: var(--of-on-accent);
             border: none;
             border-radius: 8px;
             padding: 0 24px;
@@ -277,9 +429,9 @@
             height: 300px;
         }
         .download-btn:hover {
-            background: #219150;
+            background: var(--of-accent-dark);
             transform: scale(1.02);
-            box-shadow: 0 4px 12px rgba(39, 174, 96, 0.4);
+            box-shadow: 0 4px 12px rgba(var(--of-accent-hover-rgb), 0.4);
         }
         
         .download-btn:active {
@@ -293,11 +445,11 @@
             bottom: 24px;
             width: 56px;
             height: 56px;
-            background: #2ecc71;
+            background: var(--of-accent);
             border: none;
             border-radius: 50%;
             cursor: pointer;
-            box-shadow: 0 4px 16px rgba(46, 204, 113, 0.3);
+            box-shadow: 0 4px 16px rgba(var(--of-accent-rgb), 0.3);
             transition: all 0.3s var(--ease-smooth);
             z-index: 1000;
             display: flex;
@@ -306,9 +458,9 @@
         }
         
         .settings-btn:hover {
-            background: #27ae60;
+            background: var(--of-accent-hover);
             transform: scale(1.1);
-            box-shadow: 0 6px 20px rgba(46, 204, 113, 0.4);
+            box-shadow: 0 6px 20px rgba(var(--of-accent-rgb), 0.4);
         }
         .settings-btn img {
             width: 28px;
@@ -324,7 +476,7 @@
             /* margin-top: 100px; */ /* 移除此行，由 queue-list 內部控制間距 */
             text-align: center;
             font-size: 22px;
-            color: #888;
+            color: var(--of-text-dim);
             flex: 1; /* 讓佇列頁面佔據剩餘空間 */
             width: 100%; /* 讓佇列頁面寬度為100% */
             display: flex; /* 讓其內容可以居中 */
@@ -338,11 +490,11 @@
             --popup-overlay-blur: 8px;
             --popup-fade-duration: 0.24s;
             --popup-radius: 18px;
-            --popup-theme-green: #27ae60;
-            --popup-theme-green-hover: #219150;
-            --popup-theme-green-soft: rgba(39, 174, 96, 0.25);
-            --popup-surface: #1f242b;
-            --popup-surface-border: rgba(39, 174, 96, 0.26);
+            --popup-theme-green: var(--of-accent-hover);
+            --popup-theme-green-hover: var(--of-accent-dark);
+            --popup-theme-green-soft: var(--of-accent-soft);
+            --popup-surface: var(--of-surface-popup);
+            --popup-surface-border: var(--of-accent-border-soft);
             --popup-shadow: 0 16px 44px rgba(0, 0, 0, 0.45);
         }
 
@@ -406,7 +558,7 @@
         .modal-title {
             font-size: 18px;
             font-weight: bold;
-            color: #2ecc71;
+            color: var(--of-accent);
             margin-bottom: 18px;
             margin-top: 0;
             width: 100%;
@@ -414,7 +566,7 @@
         }
         .modal-msg {
             font-size: 16px;
-            color: #e5e7eb;
+            color: var(--of-text);
             margin-bottom: 18px;
             text-align: center;
             width: 100%;
@@ -422,7 +574,7 @@
         }
         .modal-btn {
             background: var(--popup-theme-green);
-            color: #fff;
+            color: var(--of-on-accent);
             border: none;
             border-radius: 8px;
             padding: 0 24px;
@@ -447,7 +599,7 @@
         
         .modal-btn-primary {
             background: var(--popup-theme-green);
-            color: #fff;
+            color: var(--of-on-accent);
             border: none;
             border-radius: 8px;
             padding: 0 24px;
@@ -463,7 +615,7 @@
         
         .modal-btn-secondary {
             background: transparent;
-            color: #9af0bf;
+            color: var(--of-accent-light);
             border: 1px solid var(--popup-theme-green-soft);
             border-radius: 8px;
             padding: 0 24px;
@@ -474,9 +626,49 @@
         }
         
         .modal-btn-secondary:hover {
-            background: rgba(39, 174, 96, 0.14);
+            background: rgba(var(--of-accent-hover-rgb), 0.14);
             border-color: var(--popup-theme-green);
         }
+
+        /* Dev Command 啟用提醒：亮紅系、適度柔和（非高强度警示） */
+        #dev-cmd-enable-warn-bg {
+            --dev-warn-overlay: rgba(22, 12, 12, 0.48);
+        }
+        #dev-cmd-enable-warn-bg.app-modal-overlay {
+            background: var(--dev-warn-overlay);
+        }
+        #dev-cmd-enable-warn-bg .modal.dev-cmd-warn-modal {
+            border-color: rgba(248, 113, 113, 0.38);
+            box-shadow: 0 14px 40px rgba(0, 0, 0, 0.38);
+            background: linear-gradient(165deg, #2a2122 0%, var(--popup-surface) 45%);
+        }
+        #dev-cmd-enable-warn-bg .dev-cmd-warn-modal .modal-title {
+            color: #f87171;
+        }
+        #dev-cmd-enable-warn-bg .dev-cmd-warn-modal .modal-msg {
+            color: #e8e9ec;
+        }
+        #dev-cmd-enable-warn-bg .dev-cmd-warn-modal .modal-msg strong {
+            color: #fca5a5;
+        }
+        #dev-cmd-enable-warn-bg .dev-cmd-warn-modal .modal-btn-primary {
+            background: #e5534b;
+        }
+        #dev-cmd-enable-warn-bg .dev-cmd-warn-modal .modal-btn-primary:hover {
+            background: #ef6a62;
+        }
+        #dev-cmd-enable-warn-bg .dev-cmd-warn-modal .modal-btn-secondary {
+            color: #fecaca;
+            border-color: rgba(248, 113, 113, 0.4);
+        }
+        #dev-cmd-enable-warn-bg .dev-cmd-warn-modal .modal-btn-secondary:hover {
+            background: rgba(248, 113, 113, 0.12);
+            border-color: rgba(252, 165, 165, 0.55);
+        }
+        #dev-cmd-enable-warn-bg .dev-cmd-warn-modal .settings-checkbox-label span {
+            color: var(--of-text);
+        }
+
         .video-modal-bg {
             transform: scale(0.95);
             transition: opacity var(--popup-fade-duration) var(--ease-smooth), transform var(--popup-fade-duration) var(--ease-smooth);
@@ -501,14 +693,14 @@
         .video-modal-loading {
             padding: 24px;
             font-size: 16px;
-            color: #aaa;
+            color: var(--of-text-muted);
             text-align: center;
         }
         .video-modal-header {
             display: flex;
             align-items: center;
             padding: 16px 20px;
-            border-bottom: 1px solid #444;
+            border-bottom: 1px solid var(--of-border);
         }
         .video-modal-thumb {
             width: 160px;
@@ -516,7 +708,7 @@
             border-radius: 8px;
             object-fit: contain;
             margin-right: 16px;
-            background: #181a20;
+            background: var(--of-bg);
             flex-shrink: 0;
         }
         .video-modal-titlebox {
@@ -529,7 +721,7 @@
         .video-modal-title {
             font-size: 18px;
             font-weight: 600;
-            color: #e5e7eb;
+            color: var(--of-text);
             margin-bottom: 6px;
             margin-top: 0;
             word-break: break-word;
@@ -537,12 +729,12 @@
         }
         .video-modal-meta {
             font-size: 14px;
-            color: #aaa;
+            color: var(--of-text-muted);
             margin-bottom: 0;
         }
         .video-modal-uploader {
             font-size: 12px;
-            color: #aaa;
+            color: var(--of-text-muted);
             margin-bottom: 0;
         }
         .video-modal-options {
@@ -550,11 +742,11 @@
             display: flex;
             flex-direction: column;
             gap: 12px;
-            border-bottom: 1px solid #444;
+            border-bottom: 1px solid var(--of-border);
         }
         .video-modal-label {
             font-size: 13px;
-            color: #e5e7eb;
+            color: var(--of-text);
             margin-bottom: 6px;
             font-weight: 500;
         }
@@ -577,9 +769,9 @@
             width: 100%;
             padding: 8px 12px;
             border-radius: 6px;
-            border: 1px solid #444;
-            background: #1a1d23;
-            color: #e5e7eb;
+            border: 1px solid var(--of-border);
+            background: var(--of-bg-elevated);
+            color: var(--of-text);
             font-size: 14px;
             cursor: pointer;
             display: flex;
@@ -595,20 +787,20 @@
             min-width: 0;
         }
         .custom-select-header:hover {
-            border-color: #2ecc71;
-            background: #2b2e37;
+            border-color: var(--of-accent);
+            background: var(--of-bg-card);
         }
         .custom-select-header.active {
-            border-color: #2ecc71;
-            background: #2b2e37;
-            box-shadow: 0 0 0 2px rgba(46, 204, 113, 0.2);
+            border-color: var(--of-accent);
+            background: var(--of-bg-card);
+            box-shadow: 0 0 0 2px rgba(var(--of-accent-rgb), 0.2);
         }
         .custom-select-arrow {
             width: 0;
             height: 0;
             border-left: 5px solid transparent;
             border-right: 5px solid transparent;
-            border-top: 5px solid #e5e7eb;
+            border-top: 5px solid var(--of-text);
             transition: transform 0.2s ease;
         }
         .custom-select-header.active .custom-select-arrow {
@@ -620,8 +812,8 @@
             left: 0;
             right: 0;
             box-sizing: border-box;
-            background: #23262f;
-            border: 1px solid #444;
+            background: var(--of-surface);
+            border: 1px solid var(--of-border);
             border-top: none;
             border-radius: 0 0 8px 8px;
             max-height: 200px;
@@ -637,27 +829,27 @@
             padding: 8px 12px;
             cursor: pointer;
             transition: background-color 0.2s ease;
-            border-bottom: 1px solid #333;
+            border-bottom: 1px solid var(--of-border-subtle);
             font-size: 14px;
         }
         .custom-select-option:last-child {
             border-bottom: none;
         }
         .custom-select-option:hover {
-            background: #3a4150;
-            color: #f3f4f6;
+            background: var(--of-hover-neutral);
+            color: var(--of-text-inverse);
         }
         .custom-select-option.selected {
-            background: #2ecc71;
-            color: #fff;
+            background: var(--of-accent);
+            color: var(--of-on-accent);
         }
 
 
 
-        /* 淺色主題樣式 */
+        /* 淺色主題樣式（結構色見 theme-tokens.css） */
         body.light-theme {
-            background: #f5f5f5;
-            color: #333;
+            background: var(--of-bg);
+            color: var(--of-text);
         }
         /* 淺色主題的卷軸顏色 */
         body.light-theme, body.light-theme .main, body.light-theme .queue-list {
@@ -675,74 +867,107 @@
             background: #b5b8bd; /* 稍深灰 */
         }
         body.light-theme .container {
-            background: #f5f5f5;
-        }
-        body.light-theme .sidebar {
-            background: #ffffff;
-            box-shadow: 2px 0 8px rgba(0,0,0,0.1);
-        }
-        body.light-theme .nav-item {
-            color: #333;
+            background: var(--of-bg);
         }
         body.light-theme .nav-item.selected {
-            background: #2ecc71;
-            color: #fff;
-        }
-        body.light-theme .nav-text {
-            color: #333;
+            background: var(--of-accent);
+            color: var(--of-on-accent);
         }
         body.light-theme .nav-item.selected .nav-text {
-            color: #fff;
+            color: var(--of-on-accent);
         }
         body.light-theme .main {
-            background: #f5f5f5;
+            background: var(--of-bg);
         }
 
         body.light-theme .search-input {
-            background: #ffffff;
-            border-color: #ddd;
-            color: #333;
+            border-color: var(--of-border);
         }
         body.light-theme .search-input:focus {
-            border-color: #2ecc71;
+            border-color: var(--of-accent);
         }
-        body.light-theme .queue-item {
-            background: #ffffff;
-            color: #333;
+        body.light-theme .dev-cmd-input-shell {
+            border-color: var(--of-border);
         }
-        body.light-theme .queue-playlist-card {
-            background: #ffffff;
-            color: #333;
+        body.light-theme .dev-cmd-input-shell.dev-cmd-shell-focus {
+            border-color: var(--of-accent);
+        }
+        body.light-theme .dev-cmd-suggest-list {
+            border-color: var(--of-border);
+        }
+        body.light-theme .dev-cmd-suggest-item {
+            color: #1f2937;
+            border-bottom-color: var(--of-text);
+        }
+        body.light-theme .dev-cmd-suggest-item .dev-cmd-suggest-match {
+            color: var(--of-text-muted-2);
+        }
+        body.light-theme .dev-cmd-suggest-item .dev-cmd-suggest-rest {
+            color: #1d4ed8;
+            font-weight: 600;
+        }
+        body.light-theme .dev-cmd-suggest-item:hover {
+            background: var(--of-hover-neutral);
+            color: var(--of-text-inverse);
+        }
+        body.light-theme .dev-cmd-suggest-item:hover .dev-cmd-suggest-match,
+        body.light-theme .dev-cmd-suggest-item:hover .dev-cmd-suggest-rest {
+            color: var(--of-text-inverse);
+        }
+        body.light-theme .dev-cmd-suggest-item.dev-cmd-suggest-item-active {
+            background: var(--of-accent-hover);
+            color: var(--of-accent-on-muted);
+        }
+        body.light-theme .dev-cmd-suggest-item.dev-cmd-suggest-item-active .dev-cmd-suggest-match,
+        body.light-theme .dev-cmd-suggest-item.dev-cmd-suggest-item-active .dev-cmd-suggest-rest {
+            color: var(--of-accent-on-muted);
         }
         body.light-theme .queue-playlist-card-header:hover {
             background: rgba(0,0,0,0.05);
         }
         body.light-theme .queue-playlist-card-title {
-            color: #333;
-        }
-        body.light-theme .queue-playlist-video-item {
-            background: #f5f5f5;
+            color: var(--of-text);
         }
         body.light-theme .queue-playlist-video-item.completed {
-            background: #e8f5e9;
-            border-color: rgba(46, 204, 113, 0.5);
-        }
-        body.light-theme .custom-select-header {
-            background: #ffffff;
-            border-color: #ddd;
-            color: #333;
-        }
-        body.light-theme .custom-select-options {
-            background: #ffffff;
-            border-color: #ddd;
+            background: var(--of-accent-completed-bg);
+            border-color: rgba(var(--of-accent-rgb), 0.5);
         }
         body.light-theme .custom-select-option {
-            color: #333;
-            border-bottom-color: #eee;
+            border-bottom-color: var(--of-border-subtle);
         }
-        body.light-theme .modal {
-            background: #ffffff;
-            color: #333;
+        body.light-theme #dev-cmd-enable-warn-bg {
+            --dev-warn-overlay: rgba(48, 20, 20, 0.32);
+        }
+        body.light-theme #dev-cmd-enable-warn-bg .modal.dev-cmd-warn-modal {
+            background: linear-gradient(165deg, #fff8f8 0%, #ffffff 42%);
+            border-color: rgba(248, 113, 113, 0.42);
+            box-shadow: 0 12px 36px rgba(180, 60, 60, 0.12);
+        }
+        body.light-theme #dev-cmd-enable-warn-bg .dev-cmd-warn-modal .modal-title {
+            color: #ef4444;
+        }
+        body.light-theme #dev-cmd-enable-warn-bg .dev-cmd-warn-modal .modal-msg {
+            color: #374151;
+        }
+        body.light-theme #dev-cmd-enable-warn-bg .dev-cmd-warn-modal .modal-msg strong {
+            color: #dc2626;
+        }
+        body.light-theme #dev-cmd-enable-warn-bg .dev-cmd-warn-modal .modal-btn-primary {
+            background: #e5534b;
+        }
+        body.light-theme #dev-cmd-enable-warn-bg .dev-cmd-warn-modal .modal-btn-primary:hover {
+            background: #ef6a62;
+        }
+        body.light-theme #dev-cmd-enable-warn-bg .dev-cmd-warn-modal .modal-btn-secondary {
+            color: #b91c1c;
+            border-color: rgba(248, 113, 113, 0.55);
+        }
+        body.light-theme #dev-cmd-enable-warn-bg .dev-cmd-warn-modal .modal-btn-secondary:hover {
+            background: rgba(254, 226, 226, 0.85);
+            border-color: #f87171;
+        }
+        body.light-theme #dev-cmd-enable-warn-bg .dev-cmd-warn-modal .settings-checkbox-label span {
+            color: #1f2937;
         }
         /* 播放清單重複下載：獨立彈窗（重做） */
         .playlist-duplicate-overlay {
@@ -758,10 +983,10 @@
             max-height: min(78vh, 760px);
             display: flex;
             flex-direction: column;
-            border: 1px solid #2b3341;
+            border: 1px solid var(--of-panel-border);
             border-radius: var(--popup-radius);
             overflow: hidden;
-            background: #171b24;
+            background: var(--of-panel-bg);
             border-color: var(--popup-surface-border);
             box-shadow: var(--popup-shadow);
             transform: translateY(8px) scale(0.98);
@@ -772,20 +997,20 @@
         }
         .playlist-duplicate-head {
             padding: 18px 20px 14px;
-            border-bottom: 1px solid #2c3645;
-            background: linear-gradient(180deg, #1a2130 0%, #171b24 100%);
+            border-bottom: 1px solid var(--of-panel-border-sub);
+            background: linear-gradient(180deg, var(--of-panel-bg-top) 0%, var(--of-panel-bg) 100%);
         }
         .playlist-duplicate-title {
             margin: 0;
             font-size: 18px;
             font-weight: 700;
-            color: #f8fafc;
+            color: var(--of-panel-text-title);
             line-height: 1.3;
         }
         .playlist-duplicate-desc {
             margin: 8px 0 0;
             font-size: 13px;
-            color: #a9b6cb;
+            color: var(--of-panel-text-desc);
             line-height: 1.45;
             white-space: pre-line;
         }
@@ -795,8 +1020,8 @@
             justify-content: space-between;
             gap: 8px;
             padding: 12px 20px;
-            border-bottom: 1px solid #283244;
-            background: #171f2d;
+            border-bottom: 1px solid var(--of-panel-border-mid);
+            background: var(--of-panel-bg-tools);
         }
         .playlist-duplicate-tools-left {
             display: flex;
@@ -808,19 +1033,19 @@
             align-items: center;
             gap: 8px;
             font-size: 13px;
-            color: #dbe6f7;
+            color: var(--of-panel-text-master);
             user-select: none;
         }
         .playlist-duplicate-master input[type="checkbox"] {
             width: 16px;
             height: 16px;
-            accent-color: #27ae60;
+            accent-color: var(--of-accent-hover);
             cursor: pointer;
         }
         .playlist-duplicate-tool-btn {
-            border: 1px solid #2f5a42;
-            background: #1d3227;
-            color: #d8f3e3;
+            border: 1px solid var(--of-accent-muted-border);
+            background: var(--of-accent-muted-bg);
+            color: var(--of-accent-muted-text);
             border-radius: 8px;
             padding: 5px 11px;
             font-size: 12px;
@@ -828,23 +1053,23 @@
             transition: all 0.2s;
         }
         .playlist-duplicate-tool-btn:hover {
-            background: #244232;
-            border-color: #3f7556;
+            background: var(--of-accent-muted-bg-hover);
+            border-color: var(--of-accent-muted-border-hover);
         }
         .playlist-duplicate-count {
             font-size: 12px;
-            color: #6ee7a8;
+            color: var(--of-accent-lighter);
             white-space: nowrap;
         }
         .playlist-duplicate-body {
             padding: 12px 20px 10px;
             overflow-y: auto;
-            background: #151922;
+            background: var(--of-panel-bg-body);
         }
         .playlist-duplicate-empty {
             padding: 18px 0 20px;
             text-align: center;
-            color: #9ca3af;
+            color: var(--of-text-muted-2);
             font-size: 13px;
         }
         .playlist-duplicate-row {
@@ -853,25 +1078,25 @@
             gap: 10px;
             padding: 10px 12px;
             margin-bottom: 8px;
-            border: 1px solid #303a49;
+            border: 1px solid var(--of-panel-border-row);
             border-radius: 10px;
-            background: #1b2230;
+            background: var(--of-panel-bg-row);
             cursor: pointer;
             transition: border-color 0.2s, background 0.2s;
         }
         .playlist-duplicate-row:hover {
-            border-color: #4a5c78;
-            background: #212b3b;
+            border-color: var(--of-panel-border-row-hover);
+            background: var(--of-panel-bg-row-hover);
         }
         .playlist-duplicate-row.active {
-            border-color: #27ae60;
-            background: rgba(39, 174, 96, 0.16);
+            border-color: var(--of-accent-hover);
+            background: rgba(var(--of-accent-hover-rgb), 0.16);
         }
         .playlist-duplicate-checkbox {
             margin-top: 2px;
             width: 16px;
             height: 16px;
-            accent-color: #27ae60;
+            accent-color: var(--of-accent-hover);
             cursor: pointer;
             flex: 0 0 auto;
         }
@@ -882,7 +1107,7 @@
         .playlist-duplicate-file-title {
             font-size: 14px;
             font-weight: 600;
-            color: #eef2ff;
+            color: var(--of-panel-text-file);
             overflow: hidden;
             text-overflow: ellipsis;
             white-space: nowrap;
@@ -890,7 +1115,7 @@
         .playlist-duplicate-file-path {
             margin-top: 4px;
             font-size: 12px;
-            color: #94a3b8;
+            color: var(--of-panel-text-path);
             overflow: hidden;
             text-overflow: ellipsis;
             white-space: nowrap;
@@ -901,8 +1126,8 @@
             justify-content: flex-end;
             gap: 10px;
             padding: 14px 20px 18px;
-            border-top: 1px solid #2b3341;
-            background: #171b24;
+            border-top: 1px solid var(--of-panel-border);
+            background: var(--of-panel-bg);
         }
         .playlist-duplicate-btn {
             border: none;
@@ -915,16 +1140,16 @@
         }
         .playlist-duplicate-btn-muted {
             background: transparent;
-            color: #9af0bf;
+            color: var(--of-accent-light);
             border: 1px solid var(--popup-theme-green-soft);
         }
         .playlist-duplicate-btn-muted:hover {
-            background: rgba(39, 174, 96, 0.14);
+            background: rgba(var(--of-accent-hover-rgb), 0.14);
             border-color: var(--popup-theme-green);
         }
         .playlist-duplicate-btn-danger {
             background: var(--popup-theme-green);
-            color: #fff;
+            color: var(--of-on-accent);
         }
         .playlist-duplicate-btn-danger:hover {
             background: var(--popup-theme-green-hover);
@@ -936,7 +1161,7 @@
         }
         body.light-theme .playlist-duplicate-head {
             background: linear-gradient(180deg, #f8fbff 0%, #ffffff 100%);
-            border-bottom-color: #e5e7eb;
+            border-bottom-color: var(--of-text);
         }
         body.light-theme .playlist-duplicate-title {
             color: #0f172a;
@@ -945,8 +1170,8 @@
             color: #475569;
         }
         body.light-theme .playlist-duplicate-tools {
-            background: #f8fafc;
-            border-bottom-color: #e5e7eb;
+            background: var(--of-panel-text-title);
+            border-bottom-color: var(--of-text);
         }
         body.light-theme .playlist-duplicate-tool-btn {
             background: #fff;
@@ -958,25 +1183,25 @@
         }
         body.light-theme .playlist-duplicate-tool-btn:hover {
             background: #f1f5f9;
-            border-color: #94a3b8;
+            border-color: var(--of-panel-text-path);
         }
         body.light-theme .playlist-duplicate-count {
-            color: #15803d;
+            color: var(--of-accent-completed-text);
         }
         body.light-theme .playlist-duplicate-body {
             background: #ffffff;
         }
         body.light-theme .playlist-duplicate-row {
-            background: #f8fafc;
+            background: var(--of-panel-text-title);
             border-color: #dbe2ea;
         }
         body.light-theme .playlist-duplicate-row:hover {
-            background: #f0fdf4;
-            border-color: #b7ebc9;
+            background: var(--of-accent-completed-bg-2);
+            border-color: var(--of-accent-completed-border-2);
         }
         body.light-theme .playlist-duplicate-row.active {
-            background: #e7f8ee;
-            border-color: #6acb91;
+            background: var(--of-accent-completed-bg-2);
+            border-color: var(--of-accent-lighter);
         }
         body.light-theme .playlist-duplicate-file-title {
             color: #1f2937;
@@ -986,17 +1211,17 @@
         }
         body.light-theme .playlist-duplicate-foot {
             background: #ffffff;
-            border-top-color: #e5e7eb;
+            border-top-color: var(--of-text);
         }
         body.light-theme .video-modal {
             background: #ffffff;
-            color: #333;
+            color: var(--of-text);
         }
         body.light-theme .video-modal-title {
-            color: #333;
+            color: var(--of-text);
         }
         body.light-theme .video-modal-label {
-            color: #333;
+            color: var(--of-text);
         }
         .video-modal-actions {
             display: flex;
@@ -1007,7 +1232,7 @@
         }
         .video-modal-btn {
             background: var(--popup-theme-green);
-            color: #fff;
+            color: var(--of-on-accent);
             border: none;
             border-radius: 6px;
             padding: 10px 24px;
@@ -1025,14 +1250,14 @@
         }
         .video-modal-btn.cancel {
             background: transparent;
-            color: #9af0bf;
+            color: var(--of-accent-light);
             border: 1px solid var(--popup-theme-green-soft);
         }
         .video-modal-btn:hover {
             background: var(--popup-theme-green-hover);
         }
         .video-modal-btn.cancel:hover {
-            background: rgba(39, 174, 96, 0.14);
+            background: rgba(var(--of-accent-hover-rgb), 0.14);
             border-color: var(--popup-theme-green);
         }
 
@@ -1057,7 +1282,7 @@
         }
         .playlist-modal-header {
             padding: 12px 20px;
-            border-bottom: 1px solid #444;
+            border-bottom: 1px solid var(--of-border);
             display: flex;
             justify-content: space-between;
             align-items: center;
@@ -1066,17 +1291,17 @@
         .playlist-modal-title {
             font-size: 18px;
             font-weight: bold;
-            color: #9af0bf;
+            color: var(--of-accent-light);
         }
         .playlist-modal-subtitle {
             font-size: 12px;
-            color: #aaa;
+            color: var(--of-text-muted);
             margin-top: 2px;
         }
         .playlist-modal-close {
             background: transparent;
             border: none;
-            color: #e5e7eb;
+            color: var(--of-text);
             font-size: 28px;
             cursor: pointer;
             width: 32px;
@@ -1088,11 +1313,11 @@
             transition: background 0.2s;
         }
         .playlist-modal-close:hover {
-            background: rgba(39, 174, 96, 0.14);
+            background: rgba(var(--of-accent-hover-rgb), 0.14);
         }
         .playlist-modal-toolbar {
             padding: 8px 20px;
-            border-bottom: 1px solid #444;
+            border-bottom: 1px solid var(--of-border);
             display: flex;
             gap: 8px;
             align-items: center;
@@ -1100,8 +1325,8 @@
             flex-wrap: wrap;
         }
         .playlist-toolbar-btn {
-            background: rgba(39, 174, 96, 0.08);
-            color: #d1fae5;
+            background: rgba(var(--of-accent-hover-rgb), 0.08);
+            color: var(--of-accent-on-muted-2);
             border: 1px solid var(--popup-theme-green-soft);
             border-radius: 6px;
             padding: 6px 12px;
@@ -1110,39 +1335,39 @@
             transition: all 0.2s;
         }
         .playlist-toolbar-btn:hover {
-            background: rgba(39, 174, 96, 0.22);
+            background: rgba(var(--of-accent-hover-rgb), 0.22);
             border-color: var(--popup-theme-green);
-            color: #fff;
+            color: var(--of-on-accent);
         }
         .playlist-toolbar-check {
             display: inline-flex;
             align-items: center;
             gap: 8px;
-            color: #e5e7eb;
+            color: var(--of-text);
             font-size: 13px;
             user-select: none;
             padding: 6px 10px;
-            border: 1px solid #444;
-            background: #2b2e37;
+            border: 1px solid var(--of-border);
+            background: var(--of-bg-card);
             border-radius: 6px;
             white-space: nowrap;
         }
         .playlist-toolbar-check input[type="checkbox"]{
             width: 16px;
             height: 16px;
-            accent-color: #2ecc71;
+            accent-color: var(--of-accent);
         }
         .playlist-toolbar-select {
             display: inline-flex;
             align-items: center;
             gap: 10px;
             padding: 6px 10px;
-            border: 1px solid #444;
-            background: #2b2e37;
+            border: 1px solid var(--of-border);
+            background: var(--of-bg-card);
             border-radius: 6px;
         }
         .playlist-toolbar-select .playlist-toolbar-select-label{
-            color:#aaa;
+            color:var(--of-text-muted);
             font-size:12px;
             white-space: nowrap;
         }
@@ -1157,7 +1382,7 @@
         .custom-select.disabled .custom-select-header{
             opacity: 0.55;
             cursor: not-allowed;
-            border-color: #444;
+            border-color: var(--of-border);
             background: #1f222a;
             box-shadow: none;
         }
@@ -1183,8 +1408,8 @@
             padding: 12px 20px;
         }
         .playlist-video-item {
-            background: #1a1d23;
-            border: 1px solid #444;
+            background: var(--of-bg-elevated);
+            border: 1px solid var(--of-border);
             border-radius: 10px;
             padding: 12px;
             margin-bottom: 8px;
@@ -1198,8 +1423,8 @@
             box-shadow: 0 2px 8px rgba(0,0,0,0.3);
         }
         .playlist-video-item.selected {
-            border-color: #2ecc71;
-            background: #1e2a24;
+            border-color: var(--of-accent);
+            background: var(--of-accent-surface-tint);
         }
         .playlist-video-checkbox {
             width: 20px;
@@ -1214,7 +1439,7 @@
             border-radius: 6px;
             object-fit: cover;
             flex-shrink: 0;
-            background: #181a20;
+            background: var(--of-bg);
         }
         .playlist-video-info {
             flex: 1;
@@ -1223,14 +1448,14 @@
         .playlist-video-title {
             font-size: 15px;
             font-weight: 600;
-            color: #e5e7eb;
+            color: var(--of-text);
             margin-bottom: 4px;
             word-break: break-word;
             line-height: 1.3;
         }
         .playlist-video-meta {
             font-size: 12px;
-            color: #aaa;
+            color: var(--of-text-muted);
             margin-bottom: 0;
         }
         .playlist-video-controls {
@@ -1273,19 +1498,19 @@
         }
         .playlist-modal-footer {
             padding: 10px 20px;
-            border-top: 1px solid #444;
+            border-top: 1px solid var(--of-border);
             display: flex;
             justify-content: space-between;
             align-items: center;
             flex-shrink: 0;
         }
         .playlist-selected-count {
-            color: #aaa;
+            color: var(--of-text-muted);
             font-size: 14px;
         }
         .playlist-download-btn {
-            background: #27ae60;
-            color: #fff;
+            background: var(--of-accent-hover);
+            color: var(--of-on-accent);
             border: none;
             border-radius: 6px;
             padding: 8px 20px;
@@ -1295,12 +1520,12 @@
             transition: all 0.2s;
         }
         .playlist-download-btn:hover {
-            background: #219150;
+            background: var(--of-accent-dark);
             transform: translateY(-1px);
-            box-shadow: 0 4px 12px rgba(46, 204, 113, 0.3);
+            box-shadow: 0 4px 12px rgba(var(--of-accent-rgb), 0.3);
         }
         .playlist-download-btn:disabled {
-            background: #666;
+            background: var(--of-disabled);
             cursor: not-allowed;
             transform: none;
         }
@@ -1338,13 +1563,13 @@
             flex-direction: column;
             align-items: center;
             padding: 8px 0 12px; /* 縮小上下高度 */
-            background: #181a20; /* 與頁面一致，避免透出 */
+            background: var(--of-bg); /* 與頁面一致，避免透出 */
             z-index: 1200; /* 高於一般內容，低於模態視窗(>10000) */
             box-shadow: 0 -6px 24px rgba(0,0,0,0.35);
         }
 
         .queue-item {
-            background: #2b2e37; /* 項目背景色 */
+            background: var(--of-bg-card); /* 項目背景色 */
             border-radius: 12px;
             padding: 10px 15px; /* 縮小內邊距 */
             /* margin-bottom: 20px; */ /* 項目間距由分隔線控制 */
@@ -1365,13 +1590,13 @@
         }
 
         .queue-item.completed {
-            border: 2px solid #2ecc71;
-            background: #1e2a24;
+            border: 2px solid var(--of-accent);
+            background: var(--of-accent-surface-tint);
         }
 
         .queue-item.completed:hover {
-            border-color: #27ae60;
-            box-shadow: 0 6px 16px rgba(46, 204, 113, 0.3);
+            border-color: var(--of-accent-hover);
+            box-shadow: 0 6px 16px rgba(var(--of-accent-rgb), 0.3);
         }
 
         .queue-item-thumbnail {
@@ -1381,11 +1606,11 @@
             border-radius: 8px;
             margin-right: 12px; /* 縮小右邊距 */
             flex-shrink: 0; /* 防止縮圖被壓縮 */
-            background-color: #181a20; /* 縮圖載入前的背景 */
+            background-color: var(--of-bg); /* 縮圖載入前的背景 */
             display: flex; /* 讓內容居中 */
             align-items: center;
             justify-content: center;
-            color: #b0b0b0; /* 文字顏色 */
+            color: var(--of-text-secondary); /* 文字顏色 */
             font-size: 12px; /* 文字大小 */
             text-align: center;
             line-height: 1.2;
@@ -1409,7 +1634,7 @@
         .queue-item-title {
             font-size: 16px; /* 縮小字體 */
             font-weight: bold;
-            color: #e5e7eb;
+            color: var(--of-text);
             margin-bottom: 3px; /* 縮小下邊距 */
             word-break: break-all; /* 長標題自動換行 */
             text-align: left;
@@ -1418,14 +1643,14 @@
         .queue-item-meta,
         .queue-item-url {
             font-size: 13px; /* 縮小字體 */
-            color: #b0b0b0;
+            color: var(--of-text-secondary);
             margin-bottom: 2px; /* 縮小下邊距 */
             word-break: break-all;
             text-align: left;
         }
 
         .queue-item-url a {
-            color: #2ecc71;
+            color: var(--of-accent);
             text-decoration: none;
         }
         .queue-item-url a:hover {
@@ -1434,7 +1659,7 @@
 
         .progress-bar-container {
             width: 100%;
-            background-color: #444;
+            background-color: var(--of-border);
             border-radius: 5px;
             height: 8px;
             margin-top: 6px; /* 縮小上邊距 */
@@ -1445,7 +1670,7 @@
         .progress-bar {
             height: 100%;
             width: 0%; /* 初始為0 */
-            background: #2ecc71;
+            background: var(--of-accent);
             border-radius: 5px;
             transition: width 0.3s var(--ease-smooth);
         }
@@ -1454,14 +1679,14 @@
 
         .progress-text {
             font-size: 12px; /* 縮小字體 */
-            color: #888;
+            color: var(--of-text-dim);
             margin-top: 3px; /* 縮小上邊距 */
             text-align: right;
         }
 
         .completed-badge {
             margin-top: 6px;
-            color: #2ecc71;
+            color: var(--of-accent);
             font-size: 13px;
             font-weight: 600;
             display: inline-flex;
@@ -1471,7 +1696,7 @@
 
         .completed-badge::before {
             content: '✓';
-            color: #2ecc71;
+            color: var(--of-accent);
             font-size: 14px;
             font-weight: bold;
         }
@@ -1479,7 +1704,7 @@
         .queue-separator {
             width: 100%;
             height: 1px;
-            background-color: #3a3f4a;
+            background-color: var(--of-scrollbar-thumb);
             margin: 0 0 8px; /* 縮小與輸入區距離 */
         }
         .queue-item-actions {
@@ -1508,13 +1733,12 @@
         .queue-item-action-btn img {
             width: 24px;
             height: 24px;
-            filter: brightness(0.85);
-            transition: filter 0.2s ease;
+            transition: filter 0.2s ease, opacity 0.2s ease;
         }
 
         /* 播放清單佇列卡片（與單一影片卡片同風格，可摺疊） */
         .queue-playlist-card {
-            background: #2b2e37;
+            background: var(--of-bg-card);
             border-radius: 12px;
             padding: 0;
             width: 100%;
@@ -1528,8 +1752,8 @@
             box-shadow: 0 6px 16px rgba(0,0,0,0.4);
         }
         .queue-playlist-card.completed {
-            border: 2px solid #2ecc71;
-            background: #1e2a24;
+            border: 2px solid var(--of-accent);
+            background: var(--of-accent-surface-tint);
         }
         .queue-playlist-card-header {
             display: flex;
@@ -1554,13 +1778,13 @@
         .queue-playlist-card-title {
             font-size: 16px;
             font-weight: bold;
-            color: #e5e7eb;
+            color: var(--of-text);
             flex: 1;
             text-align: left;
         }
         .queue-playlist-card-count {
             font-size: 13px;
-            color: #b0b0b0;
+            color: var(--of-text-secondary);
         }
         .queue-playlist-card-total-progress {
             display: flex;
@@ -1569,7 +1793,7 @@
         }
         .queue-playlist-badge {
             font-size: 12px;
-            color: #b0b0b0;
+            color: var(--of-text-secondary);
             font-weight: 600;
             flex-shrink: 0;
         }
@@ -1583,18 +1807,18 @@
         }
         .queue-playlist-total-pct {
             font-size: 12px;
-            color: #888;
+            color: var(--of-text-dim);
             flex-shrink: 0;
         }
         .queue-playlist-card-chevron {
             font-size: 12px;
-            color: #888;
+            color: var(--of-text-dim);
             display: inline-block;
             transition: transform 0.2s ease;
             transform-origin: center;
         }
         .queue-playlist-card-body {
-            border-top: 1px solid #3a3f4a;
+            border-top: 1px solid var(--of-scrollbar-thumb);
             padding: 8px 15px 10px; /* 與 queue-item 同為 15px 側邊距，保持卡片等寬 */
             max-height: 800px; /* 供展開/收合動畫使用的上限高度 */
             overflow: hidden;
@@ -1617,7 +1841,7 @@
         .queue-playlist-video-item {
             display: flex;
             align-items: flex-start;
-            background: #23262f;
+            background: var(--of-surface);
             border-radius: 8px;
             padding: 8px 12px;
             margin-bottom: 6px;
@@ -1628,8 +1852,8 @@
             margin-bottom: 0;
         }
         .queue-playlist-video-item.completed {
-            border: 1px solid rgba(46, 204, 113, 0.4);
-            background: #1a2520;
+            border: 1px solid rgba(var(--of-accent-rgb), 0.4);
+            background: var(--of-accent-surface-tint-2);
         }
         .queue-playlist-video-thumb {
             width: 80px;
@@ -1637,11 +1861,11 @@
             border-radius: 6px;
             margin-right: 10px;
             flex-shrink: 0;
-            background: #181a20;
+            background: var(--of-bg);
             display: flex;
             align-items: center;
             justify-content: center;
-            color: #b0b0b0;
+            color: var(--of-text-secondary);
             font-size: 11px;
             text-align: center;
             overflow: hidden;
@@ -1686,12 +1910,12 @@
         }
         
         .settings-container {
-            background: #23262f;
+            background: var(--of-surface);
             border-radius: 16px;
             padding: 40px;
             padding-bottom: 20px; /* 減少底部間距 */
             box-shadow: 0 8px 32px rgba(0,0,0,0.3);
-            border: 1px solid #333;
+            border: 1px solid var(--of-border-subtle);
             position: relative;
             overflow-x: hidden; /* 防止水平捲軸 */
         }
@@ -1699,13 +1923,13 @@
         .settings-section {
             margin-bottom: 30px;
             padding: 20px;
-            background: #1a1d23;
+            background: var(--of-bg-elevated);
             border-radius: 12px;
         }
         
         .settings-section-title {
             font-size: 20px;
-            color: #2ecc71;
+            color: var(--of-accent);
             margin: 0 0 20px 0;
             font-weight: 600;
         }
@@ -1719,38 +1943,38 @@
             align-items: center;
             cursor: pointer;
             font-size: 16px;
-            color: #e5e7eb;
+            color: var(--of-text);
             user-select: none;
         }
         
         .settings-checkbox {
             width: 18px;
             height: 18px;
-            accent-color: #2ecc71;
+            accent-color: var(--of-accent);
             cursor: pointer;
             margin-right: 8px;
         }
         .settings-radio {
             width: 18px;
             height: 18px;
-            accent-color: #2ecc71;
+            accent-color: var(--of-accent);
             cursor: pointer;
         }
         
         .settings-input {
             width: 100%;
             padding: 10px 12px;
-            border: 1px solid #444;
+            border: 1px solid var(--of-border);
             border-radius: 8px;
-            background: #1a1d23;
-            color: #e5e7eb;
+            background: var(--of-bg-elevated);
+            color: var(--of-text);
             font-size: 14px;
             transition: border-color 0.2s ease;
         }
         
         .settings-input:focus {
             outline: none;
-            border-color: #2ecc71;
+            border-color: var(--of-accent);
         }
         
         .settings-input:read-only {
@@ -1762,8 +1986,8 @@
             bottom: 0;
             left: 0;
             right: 0;
-            background: #23262f;
-            border-top: 1px solid #3a3f4a;
+            background: var(--of-surface);
+            border-top: 1px solid var(--of-scrollbar-thumb);
             padding: 20px 40px;
             border-radius: 0 0 16px 16px;
         }
@@ -1791,7 +2015,7 @@
             flex-direction: column;
             align-items: center;
             padding: 4px 0 6px; /* 進一步縮小上下高度 */
-            background: #181a20; /* 與頁面一致，避免透出 */
+            background: var(--of-bg); /* 與頁面一致，避免透出 */
             z-index: 1200; /* 高於一般內容，低於模態視窗(>10000) */
             box-shadow: 0 -6px 24px rgba(0,0,0,0.35);
             margin-left: 0; /* 確保不與左側邊欄重疊 */
@@ -1822,8 +2046,8 @@
         }
         
         .settings-btn-secondary {
-            background: #444;
-            color: #e5e7eb;
+            background: var(--of-border);
+            color: var(--of-text);
         }
         
         .settings-btn-secondary:hover {
@@ -1833,35 +2057,59 @@
         }
         
         .settings-btn-primary {
-            background: #2ecc71;
+            background: var(--of-accent);
             color: white;
         }
         
         .settings-btn-primary:hover {
-            background: #27ae60;
+            background: var(--of-accent-hover);
             transform: translateY(-2px);
-            box-shadow: 0 6px 20px rgba(46, 204, 113, 0.4);
+            box-shadow: 0 6px 20px rgba(var(--of-accent-rgb), 0.4);
         }
         
-        /* 淺色主題的設定頁面樣式 */
-        body.light-theme .settings-container {
-            background: #ffffff;
-            border-color: #ddd;
-            color: #333;
+        /* 主題色調設定 */
+        .theme-preset-grid {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-top: 8px;
         }
-        
-        body.light-theme .settings-section {
-            background: #f5f5f5;
+        .theme-preset-btn {
+            width: 36px;
+            height: 36px;
+            border-radius: 10px;
+            border: 2px solid transparent;
+            cursor: pointer;
+            transition: transform 0.2s var(--ease-default), box-shadow 0.2s var(--ease-default), border-color 0.2s var(--ease-default);
+            box-shadow: 0 2px 8px rgba(0,0,0,0.25);
         }
-        
-        body.light-theme .settings-section-title {
-            color: #2ecc71;
+        .theme-preset-btn:hover {
+            transform: scale(1.08);
         }
-        
-        body.light-theme .settings-checkbox-label {
-            color: #333;
+        .theme-preset-btn.active {
+            border-color: var(--of-on-accent);
+            box-shadow: 0 0 0 2px var(--of-accent), 0 4px 12px rgba(0,0,0,0.35);
         }
-
+        .theme-custom-row {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-top: 14px;
+        }
+        #theme-color-picker {
+            width: 48px;
+            height: 36px;
+            padding: 2px;
+            border: 1px solid var(--of-border);
+            border-radius: 8px;
+            background: var(--of-bg-elevated);
+            cursor: pointer;
+        }
+        #theme-color-hex {
+            font-family: Consolas, 'Courier New', monospace;
+            font-size: 14px;
+            color: var(--of-text-muted-2);
+        }
         /* Toast 通知樣式 */
         #toast-container {
             position: fixed;
@@ -1879,14 +2127,14 @@
             max-width: 360px;
             background: rgba(32, 36, 45, 0.95);
             backdrop-filter: blur(12px);
-            border: 1px solid rgba(78, 205, 143, 0.35);
+            border: 1px solid rgba(var(--of-accent-rgb), 0.35);
             box-shadow: 0 12px 30px rgba(0, 0, 0, 0.4);
             border-radius: 16px;
             padding: 16px 20px;
             display: flex;
             flex-direction: column;
             gap: 10px;
-            color: #f3f4f6;
+            color: var(--of-text-inverse);
             font-family: 'Segoe UI', 'Microsoft JhengHei', sans-serif;
             animation: toastSlideIn 0.4s var(--ease-smooth);
             pointer-events: auto;
@@ -1895,7 +2143,7 @@
         }
 
         .toast-item.success {
-            border-color: rgba(46, 204, 113, 0.55);
+            border-color: rgba(var(--of-accent-rgb), 0.55);
         }
 
         .toast-item .toast-title {
@@ -1919,7 +2167,7 @@
             right: 12px;
             background: transparent;
             border: none;
-            color: #9ca3af;
+            color: var(--of-text-muted-2);
             cursor: pointer;
             font-size: 18px;
             padding: 4px;
@@ -1928,7 +2176,7 @@
         }
 
         .toast-item .toast-close:hover {
-            color: #f3f4f6;
+            color: var(--of-text-inverse);
             transform: scale(1.05);
         }
 
@@ -1945,7 +2193,7 @@
             display: block;
             height: 100%;
             width: 100%;
-            background: linear-gradient(90deg, #27ae60, #2ecc71);
+            background: linear-gradient(90deg, var(--of-accent-hover), var(--of-accent));
             transform-origin: left;
             animation: toastProgress 4.5s linear forwards;
         }
@@ -1980,7 +2228,7 @@
         body.light-theme .toast-item {
             background: rgba(248, 250, 252, 0.95);
             color: #1f2933;
-            border-color: rgba(46, 204, 113, 0.45);
+            border-color: rgba(var(--of-accent-rgb), 0.45);
         }
 
         body.light-theme .toast-item .toast-message {
@@ -2027,41 +2275,122 @@
             -o-user-drag: none;
         }
 
+        .custom-context-menu {
+            position: fixed;
+            min-width: 170px;
+            background: #1f2933;
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            border-radius: 8px;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
+            padding: 4px;
+            z-index: 22000;
+            display: none;
+        }
+        .custom-context-menu.show {
+            display: block;
+        }
+        .custom-context-menu-item {
+            width: 100%;
+            border: 0;
+            background: transparent;
+            color: #e5ecf4;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            text-align: left;
+            padding: 7px 10px;
+            border-radius: 6px;
+            font-size: 13px;
+            cursor: pointer;
+        }
+        .custom-context-menu-item:hover {
+            background: rgba(255, 255, 255, 0.12);
+        }
+        .custom-context-menu-label {
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .custom-context-menu-shortcut {
+            color: #9aa5b1;
+            font-size: 12px;
+            white-space: nowrap;
+            flex-shrink: 0;
+        }
+        .custom-context-menu-item:disabled {
+            color: #7b8794;
+            cursor: not-allowed;
+        }
+        .custom-context-menu-separator {
+            height: 1px;
+            background: rgba(255, 255, 255, 0.12);
+            margin: 5px 2px;
+        }
+        body.light-theme .custom-context-menu {
+            background: #ffffff;
+            border-color: rgba(17, 24, 39, 0.12);
+            box-shadow: 0 8px 24px rgba(15, 23, 42, 0.16);
+        }
+        body.light-theme .custom-context-menu-item {
+            color: #1f2933;
+        }
+        body.light-theme .custom-context-menu-item:hover {
+            background: rgba(15, 23, 42, 0.08);
+        }
+        body.light-theme .custom-context-menu-item:disabled {
+            color: #9aa5b1;
+        }
+        body.light-theme .custom-context-menu-shortcut {
+            color: #7b8794;
+        }
+        body.light-theme .custom-context-menu-separator {
+            background: rgba(15, 23, 42, 0.12);
+        }
+
     </style>
 </head>
 <body>
     <div id="toast-container" aria-live="polite" aria-atomic="true"></div>
+    <div id="custom-context-menu" class="custom-context-menu" role="menu" aria-hidden="true"></div>
     <div class="container">
         <div class="sidebar" id="sidebar">
             <div class="menu-btn" onclick="toggleSidebar()">
-                <img src="assets/menu.png" alt="menu" style="width:32px;height:32px;">
+                <img class="of-app-icon" src="assets/menu.png" alt="menu" style="width:32px;height:32px;">
             </div>
             <div class="nav-item selected" id="nav-home" onclick="showPage('home')">
-                <img src="assets/home.png" alt="主頁">
+                <img class="of-app-icon" src="assets/home.png" alt="主頁">
                 <span class="nav-text">主頁</span>
             </div>
             <div class="nav-item" id="nav-queue" onclick="showPage('queue')">
-                <img src="assets/quene.png" alt="佇列">
+                <img class="of-app-icon" src="assets/quene.png" alt="佇列">
                 <span class="nav-text">佇列</span>
             </div>
             <!-- 將以下兩個按鈕固定在側邊欄底部 -->
             <div style="flex:1"></div>
             <div class="nav-item" id="nav-settings" onclick="showPage('settings')">
-                <img src="assets/settings.png" alt="設定">
+                <img class="of-app-icon" src="assets/settings.png" alt="設定">
                 <span class="nav-text">設定</span>
             </div>
             <div class="nav-item" id="nav-about" onclick="showPage('about')">
-                <img src="assets/about.png" alt="關於">
+                <img class="of-app-icon" src="assets/about.png" alt="關於">
                 <span class="nav-text">關於</span>
             </div>
         </div>
         <div class="main">
-            <img class="title-img" id="title-img" src="assets/icon_text.png" alt="">
-            <div class="search-row" id="search-row">
-                <input class="search-input" id="video-url" type="text" placeholder="請輸入影片網址...">
-                <button class="download-btn" onclick="downloadVideo()">下載</button>
+            <div class="home-center" id="home-center">
+                <div class="title-brand" id="title-img" role="img" aria-label="oldfish影片下載器">
+                    <img class="title-brand-icon" src="assets/icon.png" alt="" aria-hidden="true">
+                    <span class="title-brand-text">oldfish影片下載器</span>
+                </div>
+                <div class="search-row" id="search-row">
+                    <div class="dev-cmd-input-shell" data-dev-cmd-shell>
+                        <input class="search-input" id="video-url" type="text" placeholder="請輸入影片網址..." autocomplete="off" spellcheck="false">
+                        <div class="dev-cmd-suggest-list" role="listbox" aria-label="Dev command 候選"></div>
+                    </div>
+                    <button class="download-btn" onclick="downloadVideo()">下載</button>
+                </div>
             </div>
-            
 
             <!-- 佇列頁面改造 -->
             <div class="queue-page" id="queue-page"> <!-- 移除 hidden class，改由 JS 完全控制 -->
@@ -2072,7 +2401,10 @@
                     <div class="queue-separator"></div>
                     <!-- 佇列頁面的輸入框（置底置中） -->
                     <div class="queue-search-row" id="queue-search-row">
-                        <input class="search-input" id="queue-video-url" type="text" placeholder="請輸入影片網址...">
+                        <div class="dev-cmd-input-shell dev-cmd-input-shell--queue" data-dev-cmd-shell>
+                            <input class="search-input" id="queue-video-url" type="text" placeholder="請輸入影片網址..." autocomplete="off" spellcheck="false">
+                            <div class="dev-cmd-suggest-list" role="listbox" aria-label="Dev command 候選"></div>
+                        </div>
                         <button class="download-btn" onclick="downloadVideoFromQueue()">下載</button>
                     </div>
                 </div>
@@ -2081,8 +2413,8 @@
             <!-- 設定頁面 -->
             <div class="settings-page" id="settings-page" style="display: none;">
                 <div class="settings-container">
-                    <h2 style="margin: 0 0 30px 0; color: #e5e7eb; font-size: 28px;">設定</h2>
-                    
+                    <h2 style="margin: 0 0 30px 0; color: var(--of-text); font-size: 28px;">設定</h2>
+
                     <div class="settings-section">
                         <h3 class="settings-section-title">通知設定</h3>
                         <div class="settings-item">
@@ -2092,7 +2424,7 @@
                             </label>
                         </div>
                         <div class="settings-item" style="margin-top: 16px;">
-                            <label class="settings-label" style="display: block; margin-bottom: 8px; color: #e5e7eb; font-size: 16px;">
+                            <label class="settings-label" style="display: block; margin-bottom: 8px; color: var(--of-text); font-size: 16px;">
                                 播放清單下載完成的通知時機：
                             </label>
                             <div style="display: flex; flex-direction: column; gap: 8px;">
@@ -2117,26 +2449,96 @@
                             </label>
                         </div>
                         <div class="settings-item">
-                            <label class="settings-label" style="display: block; margin-bottom: 8px; color: #e5e7eb; font-size: 16px;">
+                            <label class="settings-label" style="display: block; margin-bottom: 8px; color: var(--of-text); font-size: 16px;">
                                 同時下載影片數量上限（建議 3~5）：
                             </label>
                             <input type="number" id="max-concurrent-downloads" class="settings-input"
                                    min="1" max="10" step="1"
-                                   style="width: 140px; padding: 10px 12px; border: 1px solid #444; border-radius: 8px; background: #1a1d23; color: #e5e7eb; font-size: 14px;">
+                                   style="width: 140px; padding: 10px 12px; border: 1px solid var(--of-border); border-radius: 8px; background: var(--of-bg-elevated); color: var(--of-text); font-size: 14px;">
                         </div>
                         <div class="settings-item">
-                            <label class="settings-label" style="display: block; margin-bottom: 8px; color: #e5e7eb; font-size: 16px;">
+                            <label class="settings-label" style="display: block; margin-bottom: 8px; color: var(--of-text); font-size: 16px;">
                                 自訂下載路徑：
                             </label>
                             <div style="display: flex; gap: 12px; align-items: center;">
                                 <input type="text" id="custom-download-path" class="settings-input" 
                                        placeholder="請輸入下載路徑..."
-                                       style="flex: 1; padding: 10px 12px; border: 1px solid #444; border-radius: 8px; background: #1a1d23; color: #e5e7eb; font-size: 14px;">
+                                       style="flex: 1; padding: 10px 12px; border: 1px solid var(--of-border); border-radius: 8px; background: var(--of-bg-elevated); color: var(--of-text); font-size: 14px;">
                                 <button type="button" id="browse-download-path" class="settings-btn-secondary" 
                                         style="padding: 10px 22px; min-width: 96px; white-space: nowrap;">
                                     瀏覽
                                 </button>
                             </div>
+                        </div>
+                    </div>
+
+                    <div class="settings-section">
+                        <h3 class="settings-section-title">外觀設定</h3>
+                        <div class="settings-item">
+                            <div class="appearance-panel" id="appearance-panel">
+                                <div class="appearance-mode-matrix">
+                                    <button type="button" class="appearance-mode-card active" id="appearance-preview-dark" aria-pressed="true" title="深色模式">
+                                        <div class="appearance-ui-preview appearance-ui-preview--dark" aria-hidden="true">
+                                            <div class="appearance-ui-sidebar">
+                                                <div class="appearance-ui-nav appearance-ui-nav--active"></div>
+                                                <div class="appearance-ui-nav"></div>
+                                                <div class="appearance-ui-nav"></div>
+                                                <div class="appearance-ui-nav"></div>
+                                            </div>
+                                            <div class="appearance-ui-main">
+                                                <div class="appearance-ui-toolbar">
+                                                    <div class="appearance-ui-search"></div>
+                                                    <div class="appearance-ui-btn"></div>
+                                                </div>
+                                                <div class="appearance-ui-card">
+                                                    <div class="appearance-ui-line"></div>
+                                                    <div class="appearance-ui-line"></div>
+                                                    <div class="appearance-ui-line appearance-ui-line--mid"></div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <span class="appearance-mode-card-label">深色</span>
+                                    </button>
+                                    <button type="button" class="appearance-mode-card" id="appearance-preview-light" aria-pressed="false" title="淺色模式">
+                                        <div class="appearance-ui-preview appearance-ui-preview--light" aria-hidden="true">
+                                            <div class="appearance-ui-sidebar">
+                                                <div class="appearance-ui-nav appearance-ui-nav--active"></div>
+                                                <div class="appearance-ui-nav"></div>
+                                                <div class="appearance-ui-nav"></div>
+                                                <div class="appearance-ui-nav"></div>
+                                            </div>
+                                            <div class="appearance-ui-main">
+                                                <div class="appearance-ui-toolbar">
+                                                    <div class="appearance-ui-search"></div>
+                                                    <div class="appearance-ui-btn"></div>
+                                                </div>
+                                                <div class="appearance-ui-card">
+                                                    <div class="appearance-ui-line"></div>
+                                                    <div class="appearance-ui-line"></div>
+                                                    <div class="appearance-ui-line appearance-ui-line--mid"></div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <span class="appearance-mode-card-label">淺色</span>
+                                    </button>
+                                </div>
+                                <span class="appearance-color-label">主題色調 <span class="appearance-color-hex" id="appearance-preview-hex">#2ECC71</span></span>
+                                <div class="theme-preset-grid" id="theme-preset-grid"></div>
+                                <div class="theme-custom-row">
+                                    <input type="color" id="theme-color-picker" value="#2ecc71" title="自訂顏色">
+                                    <span id="theme-color-hex">#2ECC71</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="settings-section">
+                        <h3 class="settings-section-title">開發者選項</h3>
+                        <div class="settings-item">
+                            <label class="settings-checkbox-label">
+                                <input type="checkbox" id="enable-dev-commands" class="settings-checkbox">
+                                <span style="margin-left: 8px;">啟用 Dev Command（開發/測試用）</span>
+                            </label>
                         </div>
                     </div>
                     
@@ -2154,21 +2556,24 @@
             <!-- 關於頁面 -->
             <div class="settings-page" id="about-page" style="display: none;">
                 <div class="settings-container" style="position: relative; display:flex; flex-direction:column; align-items:center; padding:40px;">
-                    <img src="assets/icon_text.png" alt="logo" style="width:420px; max-width:80%; margin:0 0 16px 0; filter:drop-shadow(0 0 8px #222);">
+                    <div class="title-brand about-brand" role="img" aria-label="oldfish影片下載器">
+                        <img class="title-brand-icon" src="assets/icon.png" alt="" aria-hidden="true">
+                        <span class="title-brand-text">oldfish影片下載器</span>
+                    </div>
                     <div style="width:100%; max-width:680px;">
-                        <div class="settings-item" style="color:#e5e7eb; font-size:15px; margin-bottom:8px;">
+                        <div class="settings-item" style="color:var(--of-text); font-size:15px; margin-bottom:8px;">
                             版本：<span id="about-version">—</span>
                         </div>
-                        <div class="settings-item" style="color:#e5e7eb; font-size:15px; margin-bottom:8px;">
+                        <div class="settings-item" style="color:var(--of-text); font-size:15px; margin-bottom:8px;">
                             發布日期：2025.01.20
                         </div>
-                        <div class="settings-item" style="color:#e5e7eb; font-size:15px; margin-bottom:8px;">
+                        <div class="settings-item" style="color:var(--of-text); font-size:15px; margin-bottom:8px;">
                             作者：老魚oldfish
                         </div>
                         <div class="settings-item" style="margin:16px 0 0 0;">
-                            <a id="about-github" href="#" style="color:#2ecc71; text-decoration:none;">前往 GitHub 專案頁面</a>
+                            <a id="about-github" href="#" style="color:var(--of-accent); text-decoration:none;">前往 GitHub 專案頁面</a>
                         </div>
-                        <div id="about-footer" style="text-align:center; color:#888; font-size:12px; margin-top:24px;">
+                        <div id="about-footer" style="text-align:center; color:var(--of-text-dim); font-size:12px; margin-top:24px;">
                             © 2025 老魚oldfish.
                         </div>
                     </div>
@@ -2179,7 +2584,7 @@
     </div>
     <!-- 全局載入中遮罩 -->
     <div class="loading-bg" id="loading-bg" style="position: fixed; top:0; left:0; right:0; bottom:0; background: rgba(0,0,0,0.45); z-index: 15000; display: none;">
-        <div style="position:absolute; top:50%; left:50%; transform: translate(-50%,-50%); background:#23262f; color:#e5e7eb; padding:16px 22px; border-radius:12px; box-shadow:0 4px 24px #000a; font-size:16px;">
+        <div style="position:absolute; top:50%; left:50%; transform: translate(-50%,-50%); background:var(--of-surface); color:var(--of-text); padding:16px 22px; border-radius:12px; box-shadow:0 4px 24px #000a; font-size:16px;">
             載入中...
         </div>
     </div>
@@ -2202,6 +2607,26 @@
             </div>
         </div>
     </div>
+
+    <div class="modal-bg app-modal-overlay" id="dev-cmd-enable-warn-bg" style="display:none;" onclick="if(event.target===this) closeDevCommandEnableWarningModal(false);">
+        <div class="modal app-modal-surface dev-cmd-warn-modal" role="dialog" aria-modal="true" aria-labelledby="dev-cmd-enable-warn-title" onclick="event.stopPropagation();">
+            <div class="modal-title" id="dev-cmd-enable-warn-title">啟用 Dev Command</div>
+            <div class="modal-msg" style="text-align:left;line-height:1.55;">
+                此功能為開發者專用的偵錯模式<br>除非您了解此功能的用途，否則不建議開啟
+            </div>
+            <div class="settings-item" style="margin: 12px 0 16px 0; text-align:left;">
+                <label class="settings-checkbox-label">
+                    <input type="checkbox" id="dev-cmd-warn-never-again" class="settings-checkbox">
+                    <span style="margin-left: 8px;">不要再顯示此提醒</span>
+                </label>
+            </div>
+            <div class="modal-buttons">
+                <button type="button" class="modal-btn-secondary" onclick="closeDevCommandEnableWarningModal(false)">取消</button>
+                <button type="button" class="modal-btn-primary" onclick="closeDevCommandEnableWarningModal(true)">確定啟用</button>
+            </div>
+        </div>
+    </div>
+
     <div class="playlist-duplicate-overlay app-modal-overlay" id="playlist-duplicate-modal-bg" onclick="if(event.target===this) closePlaylistDuplicateModal();">
         <div class="playlist-duplicate-dialog app-modal-surface" role="dialog" aria-modal="true" aria-labelledby="playlist-duplicate-title">
             <div class="playlist-duplicate-head">
@@ -2452,6 +2877,8 @@
         let downloadQueue = [];
         let nextTaskId = 0; // 用於給每個任務一個獨特的ID
         window.__ofNotificationsEnabled = true;
+        window.__ofDevCommandsEnabled = false;
+        window.__ofHideDevCommandEnableWarn = false;
 
         /**
          * 將影片畫質從高到低排序。
@@ -2524,8 +2951,7 @@
             if (navAbout) navAbout.classList.remove('selected');
 
             // Get all main content elements
-            const titleImg = document.getElementById('title-img');
-            const searchRow = document.getElementById('search-row');
+            const homeCenter = document.getElementById('home-center');
             const queuePage = document.getElementById('queue-page');
             const settingsPage = document.getElementById('settings-page');
             const aboutPage = document.getElementById('about-page');
@@ -2533,9 +2959,8 @@
             if (pageName === 'home') {
                 document.getElementById('nav-home').classList.add('selected');
                 
-                // 顯示主頁元素
-                if (titleImg) titleImg.style.display = 'block';
-                if (searchRow) searchRow.style.display = 'flex';
+                // 顯示主頁（垂直置中區塊）
+                if (homeCenter) homeCenter.style.display = 'flex';
                 
                 // 隱藏其他頁面
                 if (queuePage) queuePage.style.display = 'none';
@@ -2549,9 +2974,7 @@
             } else if (pageName === 'queue') {
                 document.getElementById('nav-queue').classList.add('selected');
                 
-                // 隱藏主頁元素
-                if (titleImg) titleImg.style.display = 'none';
-                if (searchRow) searchRow.style.display = 'none';
+                if (homeCenter) homeCenter.style.display = 'none';
                 
                 // 顯示佇列頁面
                 if (queuePage) queuePage.style.display = 'flex';
@@ -2567,9 +2990,7 @@
             } else if (pageName === 'settings') {
                 document.getElementById('nav-settings').classList.add('selected');
                 
-                // 隱藏主頁元素
-                if (titleImg) titleImg.style.display = 'none';
-                if (searchRow) searchRow.style.display = 'none';
+                if (homeCenter) homeCenter.style.display = 'none';
                 
                 // 隱藏佇列頁面，顯示設定頁面
                 if (queuePage) queuePage.style.display = 'none';
@@ -2585,9 +3006,7 @@
             } else if (pageName === 'about') {
                 var navA = document.getElementById('nav-about');
                 if (navA) navA.classList.add('selected');
-                // 隱藏主頁元素
-                if (titleImg) titleImg.style.display = 'none';
-                if (searchRow) searchRow.style.display = 'none';
+                if (homeCenter) homeCenter.style.display = 'none';
                 // 隱藏其他頁面
                 if (queuePage) queuePage.style.display = 'none';
                 if (settingsPage) settingsPage.style.display = 'none';
@@ -2652,6 +3071,30 @@
         function closeModal() {
             const modal = document.getElementById('modal-bg');
             closePopupOverlay(modal);
+        }
+
+        function openDevCommandEnableWarningModal() {
+            var bg = document.getElementById('dev-cmd-enable-warn-bg');
+            var neverAgain = document.getElementById('dev-cmd-warn-never-again');
+            if (neverAgain) neverAgain.checked = false;
+            if (bg) openPopupOverlay(bg);
+        }
+
+        function closeDevCommandEnableWarningModal(accepted) {
+            var bg = document.getElementById('dev-cmd-enable-warn-bg');
+            if (!bg) return;
+            var devChk = document.getElementById('enable-dev-commands');
+            if (accepted) {
+                if (devChk) devChk.checked = true;
+                var neverAgain = document.getElementById('dev-cmd-warn-never-again');
+                if (neverAgain && neverAgain.checked) {
+                    window.__ofHideDevCommandEnableWarn = true;
+                }
+                window.__ofDevCommandsEnabled = true;
+                saveSettings(true);
+                try { refreshAllDevCommandHints(); } catch (eDw) {}
+            }
+            closePopupOverlay(bg);
         }
         
         /**
@@ -2749,6 +3192,10 @@
                 return;
             }
 
+            if (tryHandleDevCommand(url, urlInput)) {
+                return;
+            }
+
             // 與主頁一致：先顯示「載入中」覆蓋層，再開啟影片/播放清單資訊模態
             requestAnimationFrame(() => showLoading());
             // 開啟影片資訊模態，讓使用者選擇格式或自動切換至播放清單視窗
@@ -2769,6 +3216,10 @@
                 showModal("提醒", "請輸入影片網址！");
                 return;
             }
+            const homeInput = document.getElementById('video-url');
+            if (tryHandleDevCommand(url.trim(), homeInput)) {
+                return;
+            }
             if (!isYoutubeUrl(url)) {
                 showModal("網址格式錯誤", "</div><div style='text-align:left;'><br>正確格式範例：<br>https://www.youtube.com/watch?v=xxxx<br>https://youtu.be/xxxx</div>");
                 return;
@@ -2780,6 +3231,36 @@
             showVideoModal(url);
         }
 
+        /** 套用主題色（委派 OFTheme 模組） */
+        function applyThemeColor(hex) {
+            if (window.OFTheme) return OFTheme.apply(hex);
+        }
+
+        function initThemeSettingsUI() {
+            if (window.OFTheme) {
+                OFTheme.initSettingsUI(function () { saveSettings(true); });
+                OFTheme.initAppearanceModeButtons(function () { saveSettings(true); });
+            }
+        }
+
+        function syncAppearancePreview() {
+            if (window.OFTheme) OFTheme.syncAppearancePreview();
+        }
+
+        function getThemeColorFromUI() {
+            return window.OFTheme ? OFTheme.getColor() : '#2ecc71';
+        }
+
+        function applyLightMode(enabled) {
+            if (window.OFTheme) return OFTheme.applyLightMode(enabled);
+            document.body.classList.toggle('light-theme', !!enabled);
+            window.__ofLightMode = !!enabled;
+        }
+
+        function isLightModeEnabled() {
+            return window.OFTheme ? OFTheme.isLightMode() : document.body.classList.contains('light-theme');
+        }
+
         /**
          * 載入設定
          */
@@ -2789,6 +3270,8 @@
                     .then(settings => {
                         console.log('設定已載入:', settings);
                         window.__ofNotificationsEnabled = settings.enableNotifications !== false;
+                        window.__ofDevCommandsEnabled = settings.enableDevCommands === true;
+                        window.__ofHideDevCommandEnableWarn = settings.hideDevCommandEnableWarning === true;
                         // 更新 UI
                         const notificationCheckbox = document.getElementById('enable-notifications');
                         if (notificationCheckbox) {
@@ -2820,6 +3303,18 @@
                         if (notifyCompleteRadio) notifyCompleteRadio.checked = (playlistNotifyMode === 'complete');
                         if (notifyEachRadio) notifyEachRadio.checked = (playlistNotifyMode === 'each');
 
+                        const devCmdCheckbox = document.getElementById('enable-dev-commands');
+                        if (devCmdCheckbox) {
+                            devCmdCheckbox.checked = settings.enableDevCommands === true;
+                        }
+                        try { refreshAllDevCommandHints(); } catch (eDevH2) {}
+
+                        applyThemeColor(settings.themeColor || (window.OFTheme && OFTheme.DEFAULT));
+                        initThemeSettingsUI();
+
+                        applyLightMode(settings.lightMode === true);
+                        syncAppearancePreview();
+
                         // 依啟用通知設定啟用/停用播放清單通知選項
                         const enabled = settings.enableNotifications !== false;
                         if (notifyCompleteRadio) notifyCompleteRadio.disabled = !enabled;
@@ -2843,7 +3338,7 @@
                 return;
             }
             window._listenersSetup = true;
-            
+
             // 為通知設定添加變更監聽器
             const notificationCheckbox = document.getElementById('enable-notifications');
             if (notificationCheckbox && !notificationCheckbox.hasAttribute('data-listener-added')) {
@@ -2859,6 +3354,27 @@
                     saveSettings(true); // 靜默儲存
                 });
                 notificationCheckbox.setAttribute('data-listener-added', 'true');
+            }
+
+            const devCmdCheckbox = document.getElementById('enable-dev-commands');
+            if (devCmdCheckbox && !devCmdCheckbox.hasAttribute('data-listener-added')) {
+                devCmdCheckbox.addEventListener('change', function() {
+                    if (this.checked) {
+                        if (window.__ofHideDevCommandEnableWarn) {
+                            window.__ofDevCommandsEnabled = true;
+                            saveSettings(true);
+                            try { refreshAllDevCommandHints(); } catch (eDevH) {}
+                            return;
+                        }
+                        this.checked = false;
+                        openDevCommandEnableWarningModal();
+                    } else {
+                        window.__ofDevCommandsEnabled = false;
+                        saveSettings(true);
+                        try { refreshAllDevCommandHints(); } catch (eDevH2) {}
+                    }
+                });
+                devCmdCheckbox.setAttribute('data-listener-added', 'true');
             }
             
             // 為解析度設定添加變更監聽器
@@ -2959,15 +3475,21 @@
             const maxConcInput = document.getElementById('max-concurrent-downloads');
             const notifyCompleteRadio = document.getElementById('playlist-notify-complete');
             const notifyEachRadio = document.getElementById('playlist-notify-each');
+            const devCmdCheckbox = document.getElementById('enable-dev-commands');
             const playlistNotifyMode = notifyEachRadio && notifyEachRadio.checked ? 'each' : 'complete';
             const settings = {
                 enableNotifications: notificationCheckbox ? notificationCheckbox.checked : true,
                 addResolutionToFilename: resolutionCheckbox ? resolutionCheckbox.checked : false,
                 customDownloadPath: downloadPathInput ? downloadPathInput.value : '',
                 maxConcurrentDownloads: maxConcInput ? Number(maxConcInput.value || 3) : 3,
-                playlistNotificationMode: playlistNotifyMode
+                playlistNotificationMode: playlistNotifyMode,
+                enableDevCommands: devCmdCheckbox ? devCmdCheckbox.checked : false,
+                hideDevCommandEnableWarning: window.__ofHideDevCommandEnableWarn === true,
+                themeColor: getThemeColorFromUI(),
+                lightMode: isLightModeEnabled()
             };
             window.__ofNotificationsEnabled = settings.enableNotifications !== false;
+            window.__ofDevCommandsEnabled = settings.enableDevCommands === true;
             
             if (window.pywebview && window.pywebview.api) {
                 window.pywebview.api.save_settings(settings)
@@ -2999,6 +3521,8 @@
                             .then(settings => {
                                 console.log('設定已重設:', settings);
                                 window.__ofNotificationsEnabled = settings.enableNotifications !== false;
+                                window.__ofDevCommandsEnabled = settings.enableDevCommands === true;
+                                window.__ofHideDevCommandEnableWarn = settings.hideDevCommandEnableWarning === true;
                                 // 更新 UI
                                 const notificationCheckbox = document.getElementById('enable-notifications');
                                 if (notificationCheckbox) {
@@ -3032,6 +3556,18 @@
                                 const enabled = settings.enableNotifications !== false;
                                 if (notifyCompleteRadio) notifyCompleteRadio.disabled = !enabled;
                                 if (notifyEachRadio) notifyEachRadio.disabled = !enabled;
+
+                                const devCmdCheckbox = document.getElementById('enable-dev-commands');
+                                if (devCmdCheckbox) {
+                                    devCmdCheckbox.checked = settings.enableDevCommands === true;
+                                }
+                                try { refreshAllDevCommandHints(); } catch (eDevH3) {}
+
+                                applyThemeColor(settings.themeColor || (window.OFTheme && OFTheme.DEFAULT));
+                                initThemeSettingsUI();
+
+                                applyLightMode(settings.lightMode === true);
+                                syncAppearancePreview();
 
                                 // 自動儲存重設後的設定
                                 saveSettings(true); // 靜默儲存
@@ -3072,7 +3608,7 @@
                 const titleEl = document.createElement('div');
                 titleEl.className = 'toast-title';
                 const iconWrap = document.createElement('span');
-                iconWrap.style.cssText = 'display:inline-flex;width:26px;height:26px;border-radius:8px;background:rgba(46,204,113,0.18);align-items:center;justify-content:center;font-size:14px;color:#2ecc71;font-weight:700;';
+                iconWrap.style.cssText = 'display:inline-flex;width:26px;height:26px;border-radius:8px;background:rgba(var(--of-accent-rgb),0.18);align-items:center;justify-content:center;font-size:14px;color:var(--of-accent);font-weight:700;';
                 iconWrap.textContent = '✓';
                 const titleText = document.createElement('span');
                 titleText.textContent = title || '通知';
@@ -3255,9 +3791,9 @@
                             noThumbText.style.display = 'flex';
                             noThumbText.style.alignItems = 'center';
                             noThumbText.style.justifyContent = 'center';
-                            noThumbText.style.backgroundColor = '#181a20';
+                            noThumbText.style.backgroundColor = 'var(--of-bg)';
                             noThumbText.style.borderRadius = '8px';
-                            noThumbText.style.color = '#b0b0b0';
+                            noThumbText.style.color = 'var(--of-text-secondary)';
                             noThumbText.style.fontSize = '12px';
                             noThumbText.style.textAlign = 'center';
                             noThumbText.style.lineHeight = '1.2';
@@ -3289,6 +3825,836 @@
         let currentFormat = '';
         let isQualitySelectOpen = false;
         let isFormatSelectOpen = false;
+
+        const DEV_RICK_URL = 'https://www.youtube.com/watch?v=dQw4w9WgXcQ';
+        /** Dev：與測試片同一支影片的 YouTube Mix（含 list=），供播放清單路徑測試 */
+        const DEV_RICK_PLAYLIST_URL = 'https://www.youtube.com/watch?v=dQw4w9WgXcQ&list=RDdQw4w9WgXcQ';
+        const DEV_RICK_THUMB = 'https://i.ytimg.com/vi/dQw4w9WgXcQ/hqdefault.jpg';
+        const DEV_UI_VIDEOS_PER_PLAYLIST = 2;
+        var DEV_CMD_VQ = ['--360', '--480', '--720', '--1080', '--1440', '--2160', '--4k'];
+        var DEV_CMD_AQ = ['--96', '--128', '--192', '--256', '--320'];
+
+        function devVideoQualityFromTokens(tokens) {
+            var label = '720p';
+            for (var i = 0; i < tokens.length; i++) {
+                var pl = String(tokens[i]).toLowerCase();
+                if (pl === '--4k') {
+                    label = '2160p';
+                    continue;
+                }
+                var m = pl.match(/^--(\d+)$/);
+                if (!m) continue;
+                var n = m[1];
+                var heights = { '360': '360p', '480': '480p', '720': '720p', '1080': '1080p', '1440': '1440p', '2160': '2160p' };
+                if (heights[n]) label = heights[n];
+            }
+            return label;
+        }
+
+        function devAudioQualityFromTokens(tokens) {
+            var label = '192kbps';
+            var map = { '320': '320kbps', '256': '256kbps', '192': '192kbps', '128': '128kbps', '96': '96kbps' };
+            for (var i = 0; i < tokens.length; i++) {
+                var pl = String(tokens[i]).toLowerCase();
+                var m = pl.match(/^--(\d+)$/);
+                if (!m) continue;
+                if (map[m[1]]) label = map[m[1]];
+            }
+            return label;
+        }
+
+        function parseDevCommand(line) {
+            var parts = String(line).trim().split(/\s+/).filter(Boolean);
+            if (parts.length < 2) return null;
+            var cmd = parts[0].toLowerCase();
+            if (cmd === '/dl') {
+                var sub = parts[1].toLowerCase();
+                var rest = parts.slice(2);
+                if (sub === 'infopage') {
+                    if (rest.length !== 1) return null;
+                    var r0 = String(rest[0]).toLowerCase();
+                    if (r0 !== '-playlist' && r0 !== '-singlevid') return null;
+                    return { kind: 'dl', sub: 'infopage', sourceMode: r0 === '-playlist' ? 'playlist' : 'singlevid' };
+                }
+                if (sub === 'dltest') {
+                    var hasP = false;
+                    var hasS = false;
+                    var hasV = false;
+                    var hasA = false;
+                    var qualToks = [];
+                    for (var j = 0; j < rest.length; j++) {
+                        var rl = String(rest[j]).toLowerCase();
+                        if (rl === '-playlist') { hasP = true; continue; }
+                        if (rl === '-singlevid') { hasS = true; continue; }
+                        if (rl === '-video') { hasV = true; continue; }
+                        if (rl === '-audio') { hasA = true; continue; }
+                        if (rl === '--4k' || /^--\d+$/.test(rl)) {
+                            qualToks.push(rest[j]);
+                            continue;
+                        }
+                        return null;
+                    }
+                    if (hasP === hasS || hasV === hasA) return null;
+                    var media = hasV ? 'video' : 'audio';
+                    var zq;
+                    for (zq = 0; zq < qualToks.length; zq++) {
+                        var qel = String(qualToks[zq]).toLowerCase();
+                        if (media === 'video') {
+                            if (DEV_CMD_VQ.indexOf(qel) < 0 && qel !== '--4k') return null;
+                        } else {
+                            if (DEV_CMD_AQ.indexOf(qel) < 0) return null;
+                        }
+                    }
+                    var qLabel2 = media === 'video' ? devVideoQualityFromTokens(qualToks) : devAudioQualityFromTokens(qualToks);
+                    return { kind: 'dl', sub: 'dltest', sourceMode: hasP ? 'playlist' : 'singlevid', media: media, qualityLabel: qLabel2 };
+                }
+                return null;
+            }
+            if (cmd === '/ui') {
+                if (parts[1].toLowerCase() !== 'quene') return null;
+                var rest2 = parts.slice(2);
+                var explicitSingle = 0;
+                var explicitPl = 0;
+                var flagS = false;
+                var flagP = false;
+                var qualTokens = [];
+                for (var k = 0; k < rest2.length; k++) {
+                    var tok = rest2[k];
+                    var tl = String(tok).toLowerCase();
+                    var mc = tl.match(/^(\d+)-(singlevid|playlist)$/);
+                    if (mc) {
+                        if (mc[2] === 'singlevid') explicitSingle += parseInt(mc[1], 10);
+                        else explicitPl += parseInt(mc[1], 10);
+                        continue;
+                    }
+                    if (tl === '-singlevid') { flagS = true; continue; }
+                    if (tl === '-playlist') { flagP = true; continue; }
+                    qualTokens.push(tok);
+                }
+                var singleCount = explicitSingle;
+                var playlistCount = explicitPl;
+                if (flagS && explicitSingle === 0) singleCount = 1;
+                if (flagP && explicitPl === 0) playlistCount = 1;
+                if (singleCount + playlistCount === 0) return null;
+                return {
+                    kind: 'ui',
+                    singleCount: singleCount,
+                    playlistCount: playlistCount,
+                    qualityLabel: devVideoQualityFromTokens(qualTokens)
+                };
+            }
+            return null;
+        }
+
+        function handleDevUiQueue(parsed) {
+            var qLabel = parsed.qualityLabel || '720p';
+            var mock = [];
+            var baseTitle = 'Never Gonna Give You Up (Dev UI)';
+            var uploader = 'Rick Astley';
+            var duration = '3:33';
+            var i;
+            var g;
+            var j;
+            for (i = 0; i < parsed.singleCount; i++) {
+                mock.push({
+                    id: nextTaskId++,
+                    url: DEV_RICK_URL,
+                    title: baseTitle + ' · 單片 ' + (i + 1),
+                    thumbnail: DEV_RICK_THUMB,
+                    uploader: uploader,
+                    duration: duration,
+                    quality: qLabel,
+                    format: 'mp4',
+                    progress: 100,
+                    status: 'Dev UI 預覽',
+                    filePath: '',
+                    eta: ''
+                });
+            }
+            for (g = 0; g < parsed.playlistCount; g++) {
+                var gid = 'dev-pl-' + Date.now() + '-' + g + '-' + Math.random().toString(36).slice(2, 8);
+                var ptitle = 'Dev 播放清單 ' + (g + 1);
+                for (j = 0; j < DEV_UI_VIDEOS_PER_PLAYLIST; j++) {
+                    mock.push({
+                        id: nextTaskId++,
+                        url: DEV_RICK_URL,
+                        title: baseTitle + ' · ' + ptitle + ' #' + (j + 1),
+                        thumbnail: DEV_RICK_THUMB,
+                        uploader: uploader,
+                        duration: duration,
+                        quality: qLabel,
+                        format: 'mp4',
+                        progress: 100,
+                        status: 'Dev UI 預覽',
+                        filePath: '',
+                        eta: '',
+                        playlistGroupId: gid,
+                        playlistTitle: ptitle
+                    });
+                }
+            }
+            downloadQueue = mock.concat(downloadQueue);
+            renderQueue();
+            showPage('queue');
+        }
+
+        function handleDevInfopage(parsed, clearInputEl) {
+            try { if (clearInputEl) clearInputEl.value = ''; } catch (e00) {}
+            var u = parsed.sourceMode === 'playlist' ? DEV_RICK_PLAYLIST_URL : DEV_RICK_URL;
+            showVideoModal(u);
+        }
+
+        function handleDevDl(parsed, clearInputEl) {
+            function clearIn() {
+                try { if (clearInputEl) clearInputEl.value = ''; } catch (e01) {}
+            }
+            var backend = null;
+            try {
+                if (typeof __getBackendApi === 'function') backend = __getBackendApi();
+            } catch (e03) { backend = null; }
+            if (!backend || typeof backend.start_get_video_info !== 'function') {
+                showModal('Dev command', '後端 API 尚未就緒，無法取得影片資訊。');
+                clearIn();
+                return;
+            }
+
+            var targetUrl = parsed.sourceMode === 'playlist' ? DEV_RICK_PLAYLIST_URL : DEV_RICK_URL;
+
+            if (parsed.sourceMode === 'playlist') {
+                showLoading();
+                window.__videoInfoCallback = function(info) {
+                    try {
+                        if (!info || !info.is_playlist) {
+                            hideLoading();
+                            showModal('Dev command', '測試網址未取得播放清單資訊，無法繼續批次測試。');
+                            clearIn();
+                            return;
+                        }
+                        hideLoading();
+                        var qLabel = parsed.qualityLabel;
+                        var fmt = parsed.media === 'video' ? 'mp4' : 'mp3';
+                        var vids = info.videos || [];
+                        if (!vids.length) {
+                            showModal('Dev command', '播放清單中沒有影片。');
+                            clearIn();
+                            return;
+                        }
+                        var selectedVideos = vids.map(function(v) {
+                            return {
+                                url: v.url,
+                                title: v.title || '未知影片',
+                                thumb: v.thumb || '',
+                                uploader: v.uploader || '',
+                                duration: v.duration || '00:00',
+                                selected: true,
+                                quality: qLabel,
+                                format: fmt
+                            };
+                        });
+                        proceedWithPlaylistDownload(selectedVideos, info.playlist_title || '播放清單');
+                        clearIn();
+                    } catch (e02) {
+                        hideLoading();
+                        showModal('Dev command', '處理播放清單時發生錯誤。');
+                        clearIn();
+                    }
+                };
+                window.__videoInfoErrorCallback = function(err) {
+                    hideLoading();
+                    var msg = (err != null && String(err)) ? String(err) : '未知錯誤';
+                    showModal('Dev command', '無法取得測試播放清單資訊：' + msg);
+                    clearIn();
+                };
+                try {
+                    backend.start_get_video_info(targetUrl);
+                } catch (e04) {
+                    hideLoading();
+                    showModal('Dev command', '呼叫後端失敗：' + (e04 && e04.message ? e04.message : String(e04)));
+                    clearIn();
+                }
+                return;
+            }
+
+            showLoading();
+            window.__videoInfoCallback = function(info) {
+                try {
+                    if (info && info.is_playlist) {
+                        hideLoading();
+                        showModal('Dev command', '測試影片回傳為播放清單，無法繼續（單片測試請使用 -singlevid）。');
+                        clearIn();
+                        return;
+                    }
+                    lastVideoInfo = info;
+                    currentUrl = DEV_RICK_URL;
+                    currentQuality = parsed.qualityLabel;
+                    currentFormat = parsed.media === 'video' ? 'mp4' : 'mp3';
+                    hideLoading();
+                    confirmDownload();
+                    clearIn();
+                } catch (e02) {
+                    hideLoading();
+                    showModal('Dev command', '處理影片資訊時發生錯誤。');
+                    clearIn();
+                }
+            };
+            window.__videoInfoErrorCallback = function(err) {
+                hideLoading();
+                var msg = (err != null && String(err)) ? String(err) : '未知錯誤';
+                showModal('Dev command', '無法取得測試影片資訊：' + msg);
+                clearIn();
+            };
+            try {
+                backend.start_get_video_info(targetUrl);
+            } catch (e04) {
+                hideLoading();
+                showModal('Dev command', '呼叫後端失敗：' + (e04 && e04.message ? e04.message : String(e04)));
+                clearIn();
+            }
+        }
+
+        function tryHandleDevCommand(raw, clearInputEl) {
+            if (!window.__ofDevCommandsEnabled) return false;
+            var t = (raw || '').trim();
+            if (!t.startsWith('/')) return false;
+            var parsed = parseDevCommand(t);
+            if (!parsed) {
+                showModal('Dev command', '無法解析指令，請檢查語法。完整說明見專案內 v2/main/docs/dev-commands.md');
+                try { if (clearInputEl) clearInputEl.value = ''; } catch (e05) {}
+                return true;
+            }
+            if (parsed.kind === 'dl') {
+                if (parsed.sub === 'infopage') {
+                    handleDevInfopage(parsed, clearInputEl);
+                    return true;
+                }
+                if (parsed.sub === 'dltest') {
+                    handleDevDl(parsed, clearInputEl);
+                    return true;
+                }
+            }
+            if (parsed.kind === 'ui') {
+                handleDevUiQueue(parsed);
+                try { if (clearInputEl) clearInputEl.value = ''; } catch (e06) {}
+                return true;
+            }
+            return true;
+        }
+
+        /** 解析游標處：parts 為已完成 token，partial 為正在輸入的最後一段（無尾端空白時） */
+        function parseDevCmdCursorState(raw) {
+            if (raw == null || raw === '' || raw.charAt(0) !== '/') return null;
+            var trailingWS = /\s$/.test(raw);
+            var afterSlash = raw.slice(1);
+            var i = 0;
+            while (i < afterSlash.length && afterSlash.charAt(i) === ' ') i++;
+            var inner = afterSlash.slice(i);
+            if (inner.length === 0) {
+                return { parts: [], partial: '', trailingWS: !!trailingWS };
+            }
+            if (trailingWS) {
+                var tks = inner.replace(/\s+$/, '').split(/\s+/).filter(Boolean);
+                return { parts: tks, partial: '', trailingWS: true };
+            }
+            var tks2 = inner.split(/\s+/).filter(Boolean);
+            if (tks2.length === 0) {
+                return { parts: [], partial: '', trailingWS: false };
+            }
+            var last = tks2[tks2.length - 1];
+            var complete = tks2.slice(0, -1);
+            return { parts: complete, partial: last, trailingWS: false };
+        }
+
+        function filtSeg(arr, partial, trailingWS) {
+            if (!partial || trailingWS) return arr.slice();
+            var pl = partial.toLowerCase();
+            return arr.filter(function(x) {
+                return x.toLowerCase().startsWith(pl);
+            });
+        }
+
+        function devCmdUiAfterVirtual(PL, partial, tws) {
+            var a = PL.slice(2).map(function(x) { return String(x).toLowerCase(); });
+            if (partial && !tws) {
+                var pl = partial.toLowerCase();
+                if (pl === '-singlevid' || pl === '-playlist' || /^\d+-(singlevid|playlist)$/.test(pl)) {
+                    a.push(pl);
+                }
+                if (/^--/.test(pl)) {
+                    var zz;
+                    var known = false;
+                    for (zz = 0; zz < DEV_CMD_VQ.length; zz++) {
+                        if (DEV_CMD_VQ[zz].toLowerCase() === pl) { known = true; break; }
+                    }
+                    if (known || pl === '--4k') a.push(pl);
+                }
+            }
+            return a;
+        }
+
+        function devCmdSuggestDlInfopageTail(PL, partial, tws) {
+            if (PL.length === 2) {
+                if (tws) return filtSeg(['-playlist', '-singlevid'], partial, tws);
+                if (partial) return filtSeg(['-playlist', '-singlevid'], partial, tws);
+                return ['-playlist', '-singlevid'];
+            }
+            return [];
+        }
+
+        function devCmdSuggestDlDltestTail(PL, partial, tws) {
+            var tail = PL.slice(2).map(function(x) { return String(x).toLowerCase(); });
+            var hasP = tail.indexOf('-playlist') >= 0;
+            var hasS = tail.indexOf('-singlevid') >= 0;
+            var hasV = tail.indexOf('-video') >= 0;
+            var hasA = tail.indexOf('-audio') >= 0;
+            if (hasP && hasS) return [];
+            if (hasV && hasA) return [];
+            var srcDone = hasP ^ hasS;
+            var mediaDone = hasV ^ hasA;
+            var srcPool = ['-playlist', '-singlevid'];
+            var medPool = ['-video', '-audio'];
+            if (!srcDone && !mediaDone) {
+                if (tws || !partial) {
+                    return srcPool.concat(medPool);
+                }
+                var a = filtSeg(srcPool, partial, false);
+                var b = filtSeg(medPool, partial, false);
+                return a.concat(b.filter(function(x) { return a.indexOf(x) < 0; }));
+            }
+            if (!srcDone) {
+                if (tws) return srcPool.slice();
+                if (partial) return filtSeg(srcPool, partial, tws);
+                return srcPool.slice();
+            }
+            if (!mediaDone) {
+                if (tws) return medPool.slice();
+                if (partial) return filtSeg(medPool, partial, tws);
+                return medPool.slice();
+            }
+            var media = hasV ? 'video' : 'audio';
+            var pool = media === 'video' ? DEV_CMD_VQ : DEV_CMD_AQ;
+            var qi;
+            var hasQual = false;
+            for (qi = 0; qi < tail.length; qi++) {
+                if (tail[qi].indexOf('--') === 0) {
+                    hasQual = true;
+                    break;
+                }
+            }
+            if (!hasQual) {
+                if (tws) return pool.slice();
+                if (partial) return filtSeg(pool, partial, tws);
+                return pool.slice();
+            }
+            if (tws) return pool.slice();
+            if (partial) return filtSeg(pool, partial, tws);
+            return [];
+        }
+
+        /** 下一個「片段」候選（非整行），例如 `/` → dl、ui */
+        function getDevCommandNextSegments(raw) {
+            if (!window.__ofDevCommandsEnabled) return [];
+            var trimmed = (raw || '').trim();
+            if (trimmed && parseDevCommand(trimmed)) return [];
+
+            var st = parseDevCmdCursorState(raw);
+            if (!st) return [];
+            var PL = st.parts.map(function(x) { return String(x).toLowerCase(); });
+            var partial = st.partial || '';
+            var pL = partial.toLowerCase();
+            var tws = st.trailingWS;
+
+            // ---- 根：僅 /
+            if (PL.length === 0) {
+                if (!partial && !tws) return ['dl', 'ui'];
+                if (partial && !tws) {
+                    if (pL === 'dl') return ['dltest', 'infopage'];
+                    if (pL === 'ui') return ['quene'];
+                    return filtSeg(['dl', 'ui'], partial, tws);
+                }
+                if (tws && PL.length === 0) return ['dl', 'ui'];
+                return [];
+            }
+
+            // ---- /dl …
+            if (PL[0] === 'dl') {
+                if (PL.length === 1) {
+                    if (tws) return filtSeg(['dltest', 'infopage'], partial, tws);
+                    if (partial) {
+                        if (pL === 'dl') return ['dltest', 'infopage'];
+                        return filtSeg(['dltest', 'infopage'], partial, tws);
+                    }
+                    return ['dltest', 'infopage'];
+                }
+                if (PL.length >= 2 && PL[1] === 'infopage') {
+                    return devCmdSuggestDlInfopageTail(PL, partial, tws);
+                }
+                if (PL.length >= 2 && PL[1] === 'dltest') {
+                    return devCmdSuggestDlDltestTail(PL, partial, tws);
+                }
+                return [];
+            }
+
+            // ---- /ui …
+            if (PL[0] === 'ui') {
+                if (PL.length === 1) {
+                    if (tws) return ['quene'];
+                    if (partial) {
+                        if (pL === 'quene') {
+                            return ['-singlevid', '-playlist', '1-singlevid', '2-playlist'];
+                        }
+                        return filtSeg(['quene'], partial, tws);
+                    }
+                }
+                if (PL.length === 2 && PL[1] === 'quene') {
+                    if (tws) {
+                        return ['-singlevid', '-playlist', '1-singlevid', '2-playlist', '3-singlevid'];
+                    }
+                    if (partial) {
+                        return filtSeg(['-singlevid', '-playlist', '1-singlevid', '2-playlist', '3-singlevid'], partial, tws);
+                    }
+                }
+                if (PL.length >= 2 && PL[1] === 'quene') {
+                    var afterV = devCmdUiAfterVirtual(PL, partial, tws);
+                    var hasS = afterV.indexOf('-singlevid') >= 0;
+                    var hasP = afterV.indexOf('-playlist') >= 0;
+                    var hasQ = false;
+                    var hasDisp = false;
+                    var hd;
+                    for (hd = 0; hd < afterV.length; hd++) {
+                        if (/^--/.test(afterV[hd])) hasQ = true;
+                        var tv = afterV[hd];
+                        if (tv === '-singlevid' || tv === '-playlist' || /^\d+-(singlevid|playlist)$/.test(tv)) {
+                            hasDisp = true;
+                        }
+                    }
+                    var baseMore = [];
+                    if (!hasS) baseMore.push('-singlevid');
+                    if (!hasP) baseMore.push('-playlist');
+                    baseMore.push('1-singlevid', '2-playlist', '3-singlevid');
+                    if (tws) {
+                        if (!hasDisp) return filtSeg(baseMore, partial, tws);
+                        if (hasDisp && !hasQ) return DEV_CMD_VQ.slice();
+                        return [];
+                    }
+                    if (partial) {
+                        if (!hasDisp) return filtSeg(baseMore, partial, tws);
+                        if (hasDisp && !hasQ) return filtSeg(DEV_CMD_VQ, partial, tws);
+                    }
+                }
+                return [];
+            }
+
+            return [];
+        }
+
+        function devCmdIsExactCompleteToken(PL, partial) {
+            if (!partial) return false;
+            var pl = partial.toLowerCase();
+            var z;
+            if (PL.length === 0) return pl === 'dl' || pl === 'ui';
+            if (PL.length === 1 && PL[0] === 'dl') return pl === 'dltest' || pl === 'infopage';
+            if (PL.length === 1 && PL[0] === 'ui') return pl === 'quene';
+
+            if (PL.length >= 2 && PL[0] === 'dl' && PL[1] === 'infopage') {
+                if (PL.length === 2) return pl === '-playlist' || pl === '-singlevid';
+                return false;
+            }
+
+            if (PL.length >= 2 && PL[0] === 'dl' && PL[1] === 'dltest') {
+                var tail2 = PL.slice(2).map(function(x) { return String(x).toLowerCase(); });
+                var hasP = tail2.indexOf('-playlist') >= 0;
+                var hasS = tail2.indexOf('-singlevid') >= 0;
+                var hasV = tail2.indexOf('-video') >= 0;
+                var hasA = tail2.indexOf('-audio') >= 0;
+                var srcDone = hasP ^ hasS;
+                var mediaDone = hasV ^ hasA;
+                if (srcDone && mediaDone) {
+                    var media = hasV ? 'video' : 'audio';
+                    var allq = media === 'video' ? DEV_CMD_VQ : DEV_CMD_AQ;
+                    for (z = 0; z < allq.length; z++) {
+                        if (allq[z].toLowerCase() === pl) return true;
+                    }
+                    return media === 'video' && pl === '--4k';
+                }
+                if (PL.length === 2) return pl === '-playlist' || pl === '-singlevid';
+                if (PL.length === 3 && srcDone && !mediaDone) return pl === '-video' || pl === '-audio';
+                if (PL.length === 3 && mediaDone && !srcDone) return pl === '-playlist' || pl === '-singlevid';
+                return false;
+            }
+
+            if (PL.length >= 2 && PL[0] === 'ui' && PL[1] === 'quene') {
+                if (pl === '-singlevid' || pl === '-playlist') return true;
+                if (/^\d+-(singlevid|playlist)$/.test(pl)) return true;
+                for (z = 0; z < DEV_CMD_VQ.length; z++) {
+                    if (DEV_CMD_VQ[z].toLowerCase() === pl) return true;
+                }
+                return false;
+            }
+            return false;
+        }
+
+        function applyDevCommandNextToken(current, seg) {
+            var out;
+            if (current == null) {
+                out = String(seg);
+            } else if (/\s$/.test(current)) {
+                out = current + seg;
+            } else {
+                var st = parseDevCmdCursorState(current);
+                if (!st) {
+                    out = current;
+                } else {
+                    var partsOrig = st.parts.slice();
+                    var PL = st.parts.map(function(x) { return String(x).toLowerCase(); });
+                    var partial = st.partial || '';
+                    if (devCmdIsExactCompleteToken(PL, partial)) {
+                        out = '/' + partsOrig.concat([partial, seg]).join(' ');
+                    } else {
+                        out = '/' + partsOrig.concat([seg]).join(' ');
+                    }
+                }
+            }
+            if (!/\s$/.test(out)) out += ' ';
+            return out;
+        }
+
+        function devCmdSuggestClose(shell) {
+            if (!shell) return;
+            shell.classList.remove('dev-cmd-shell-open');
+            var listEl = shell.querySelector('.dev-cmd-suggest-list');
+            if (listEl) {
+                listEl.innerHTML = '';
+                listEl.removeAttribute('aria-activedescendant');
+            }
+            shell._devCmdSel = -1;
+            shell._devCmdMatches = null;
+        }
+
+        /** 依目前輸入的最後片段，將候選字拆成「已打出的前綴／須補齊的尾端」（不分大小寫對齊） */
+        function devCmdSuggestHtmlForSegment(partial, seg) {
+            var s = String(seg);
+            var p = partial == null ? '' : String(partial);
+            if (!p) {
+                return '<span class="dev-cmd-suggest-rest">' + escapeHtml(s) + '</span>';
+            }
+            var pl = p.toLowerCase();
+            var sl = s.toLowerCase();
+            var preChars = 0;
+            if (sl.indexOf(pl) === 0) {
+                preChars = p.length;
+            } else {
+                var i = 0;
+                var max = Math.min(p.length, s.length);
+                while (i < max && p.charAt(i).toLowerCase() === s.charAt(i).toLowerCase()) i++;
+                preChars = i;
+            }
+            var pre = s.slice(0, preChars);
+            var suf = s.slice(preChars);
+            if (!pre) {
+                return '<span class="dev-cmd-suggest-rest">' + escapeHtml(s) + '</span>';
+            }
+            if (!suf) {
+                return '<span class="dev-cmd-suggest-match">' + escapeHtml(pre) + '</span>';
+            }
+            return '<span class="dev-cmd-suggest-match">' + escapeHtml(pre) + '</span><span class="dev-cmd-suggest-rest">' + escapeHtml(suf) + '</span>';
+        }
+
+        function devCmdSuggestRender(shell, input, listEl, segments) {
+            if (!shell || !input || !listEl) return;
+            if (!segments || segments.length === 0) {
+                devCmdSuggestClose(shell);
+                return;
+            }
+            var stPart = parseDevCmdCursorState(input.value);
+            var partialForHint = '';
+            if (stPart && !stPart.trailingWS) {
+                partialForHint = stPart.partial || '';
+            }
+            var selRaw = shell._devCmdSel;
+            var sel = -1;
+            if (typeof selRaw === 'number' && selRaw >= 0 && selRaw < segments.length) {
+                sel = selRaw;
+            } else if (typeof selRaw === 'number' && selRaw >= segments.length) {
+                sel = segments.length - 1;
+            }
+            shell._devCmdSel = sel;
+            shell._devCmdMatches = segments;
+            shell.classList.add('dev-cmd-shell-open');
+            listEl.innerHTML = '';
+            var j;
+            var seg;
+            var row;
+            for (j = 0; j < segments.length; j++) {
+                seg = segments[j];
+                row = document.createElement('div');
+                row.className = 'dev-cmd-suggest-item' + (j === sel ? ' dev-cmd-suggest-item-active' : '');
+                row.setAttribute('role', 'option');
+                row.setAttribute('aria-selected', j === sel ? 'true' : 'false');
+                row.setAttribute('data-segment', seg);
+                row.id = 'dev-cmd-opt-' + (input.id === 'video-url' ? 'h' : 'q') + '-' + j;
+                row.innerHTML = devCmdSuggestHtmlForSegment(partialForHint, seg);
+                (function(s) {
+                    row.addEventListener('mousedown', function(ev) {
+                        ev.preventDefault();
+                        input.value = applyDevCommandNextToken(input.value, s);
+                        devCmdSuggestClose(shell);
+                        try { input.focus(); } catch (e) {}
+                        try {
+                            var ev2 = new Event('input', { bubbles: true });
+                            input.dispatchEvent(ev2);
+                        } catch (e2) {}
+                    });
+                })(seg);
+                listEl.appendChild(row);
+            }
+            if (sel >= 0) {
+                try { listEl.setAttribute('aria-activedescendant', 'dev-cmd-opt-' + (input.id === 'video-url' ? 'h' : 'q') + '-' + sel); } catch (eAr) {}
+            } else {
+                try { listEl.removeAttribute('aria-activedescendant'); } catch (eAr2) {}
+            }
+            var activeRow = listEl.querySelector('.dev-cmd-suggest-item-active');
+            if (activeRow) {
+                try { activeRow.scrollIntoView({ block: 'nearest' }); } catch (eSc) {}
+            }
+        }
+
+        function devCmdSuggestApply(shell, input, listEl, index) {
+            var matches = shell._devCmdMatches;
+            if (!matches || !matches.length) return;
+            var idx = Number(index);
+            if (!Number.isFinite(idx) || idx < 0) return;
+            var i = Math.min(Math.max(0, idx), matches.length - 1);
+            input.value = applyDevCommandNextToken(input.value, matches[i]);
+            devCmdSuggestClose(shell);
+            try {
+                var ev = new Event('input', { bubbles: true });
+                input.dispatchEvent(ev);
+            } catch (e) {}
+        }
+
+        function updateDevCommandSuggestUI(shell) {
+            if (!shell) return;
+            var input = shell.querySelector('input');
+            var listEl = shell.querySelector('.dev-cmd-suggest-list');
+            if (!input || !listEl) return;
+            if (!window.__ofDevCommandsEnabled) {
+                devCmdSuggestClose(shell);
+                return;
+            }
+            var v = input.value;
+            if (!v || v.charAt(0) !== '/') {
+                devCmdSuggestClose(shell);
+                return;
+            }
+            var matches = getDevCommandNextSegments(v);
+            shell._devCmdSel = -1;
+            devCmdSuggestRender(shell, input, listEl, matches);
+        }
+
+        function refreshAllDevCommandHints() {
+            document.querySelectorAll('[data-dev-cmd-shell]').forEach(function(shell) {
+                updateDevCommandSuggestUI(shell);
+            });
+        }
+
+        function initDevCommandInputHints() {
+            document.querySelectorAll('[data-dev-cmd-shell]').forEach(function(shell) {
+                if (shell.getAttribute('data-dev-cmd-inited') === '1') return;
+                shell.setAttribute('data-dev-cmd-inited', '1');
+                var input = shell.querySelector('input');
+                var listEl = shell.querySelector('.dev-cmd-suggest-list');
+                if (!input || !listEl) return;
+
+                input.addEventListener('focus', function() {
+                    shell.classList.add('dev-cmd-shell-focus');
+                    updateDevCommandSuggestUI(shell);
+                });
+                input.addEventListener('blur', function() {
+                    shell.classList.remove('dev-cmd-shell-focus');
+                    setTimeout(function() {
+                        try {
+                            if (document.activeElement === input) return;
+                            var ae = document.activeElement;
+                            if (ae && listEl.contains(ae)) return;
+                        } catch (e0) {}
+                        devCmdSuggestClose(shell);
+                    }, 150);
+                });
+                input.addEventListener('input', function() {
+                    shell._devCmdSel = -1;
+                    updateDevCommandSuggestUI(shell);
+                });
+                input.addEventListener('keydown', function(ev) {
+                    if (!window.__ofDevCommandsEnabled) return;
+                    var matches = shell._devCmdMatches;
+                    var open = matches && matches.length > 0 && shell.classList.contains('dev-cmd-shell-open');
+                    if (ev.key === 'Escape' && open) {
+                        ev.preventDefault();
+                        devCmdSuggestClose(shell);
+                        return;
+                    }
+                    if (!open) {
+                        if (ev.key === 'Tab' && !ev.shiftKey) {
+                            var m0 = getDevCommandNextSegments(input.value);
+                            if (m0 && m0.length) {
+                                ev.preventDefault();
+                                shell._devCmdMatches = m0;
+                                devCmdSuggestApply(shell, input, listEl, 0);
+                            }
+                        }
+                        return;
+                    }
+                    if (ev.key === 'ArrowDown') {
+                        ev.preventDefault();
+                        var curDn = shell._devCmdSel;
+                        if (typeof curDn !== 'number' || curDn < 0) {
+                            shell._devCmdSel = 0;
+                        } else {
+                            shell._devCmdSel = Math.min(curDn + 1, matches.length - 1);
+                        }
+                        devCmdSuggestRender(shell, input, listEl, matches);
+                        return;
+                    }
+                    if (ev.key === 'ArrowUp') {
+                        ev.preventDefault();
+                        var curUp = shell._devCmdSel;
+                        if (typeof curUp !== 'number' || curUp < 0) {
+                            shell._devCmdSel = -1;
+                        } else if (curUp <= 0) {
+                            shell._devCmdSel = -1;
+                        } else {
+                            shell._devCmdSel = curUp - 1;
+                        }
+                        devCmdSuggestRender(shell, input, listEl, matches);
+                        return;
+                    }
+                    if (ev.key === 'Enter') {
+                        var trimmedEnter = (input.value || '').trim();
+                        if (trimmedEnter && parseDevCommand(trimmedEnter)) {
+                            devCmdSuggestClose(shell);
+                            return;
+                        }
+                        ev.preventDefault();
+                        var selEnter = shell._devCmdSel;
+                        if (typeof selEnter !== 'number' || selEnter < 0) {
+                            devCmdSuggestClose(shell);
+                            return;
+                        }
+                        devCmdSuggestApply(shell, input, listEl, selEnter);
+                        return;
+                    }
+                    if (ev.key === 'Tab' && !ev.shiftKey) {
+                        var selTab = shell._devCmdSel;
+                        if (typeof selTab !== 'number' || selTab < 0) {
+                            devCmdSuggestClose(shell);
+                            return;
+                        }
+                        ev.preventDefault();
+                        devCmdSuggestApply(shell, input, listEl, selTab);
+                    }
+                });
+            });
+        }
 
         function positionSelectOptions(select) {
             if (!select) return;
@@ -3789,7 +5155,7 @@
             queueList.innerHTML = ''; // 清空現有內容以重新渲染
 
             if (downloadQueue.length === 0) {
-                queueList.innerHTML = `<p style="text-align: center; color: #888; font-size: 18px; margin-top: 50px;">目前沒有下載任務。</p>`;
+                queueList.innerHTML = `<p style="text-align: center; color: var(--of-text-dim); font-size: 18px; margin-top: 50px;">目前沒有下載任務。</p>`;
                 return;
             }
 
@@ -3877,7 +5243,7 @@
                     </div>
                     <div class="queue-item-actions">
                         <button class="queue-item-action-btn" onclick="openFileLocation(${task.id})" ${isCompleted ? '' : 'disabled'}>
-                            <img src="assets/folder.png" alt="開啟檔案位置">
+                            <img class="of-app-icon" src="assets/folder.png" alt="開啟檔案位置">
                         </button>
                     </div>
                 `;
@@ -3932,7 +5298,7 @@
                                 <span class="queue-playlist-card-count">${group.tasks.length} 部影片</span>
                                 <div class="queue-item-actions">
                                     <button class="queue-item-action-btn" onclick="event.stopPropagation(); openPlaylistFileLocation('${group.id}')" ${hasCompletedTask ? '' : 'disabled'}>
-                                        <img src="assets/folder.png" alt="開啟檔案位置">
+                                        <img class="of-app-icon" src="assets/folder.png" alt="開啟檔案位置">
                                     </button>
                                 </div>
                                 <span class="queue-playlist-card-chevron" id="${cardId}-chevron" style="transform: rotate(0deg);">▲</span>
@@ -4251,14 +5617,239 @@
             }
         });
 
-        // 禁止右鍵選單
-        document.addEventListener('contextmenu', (e) => {
-            e.preventDefault();
+        let contextMenuState = {
+            type: null,
+            inputEl: null,
+            queueData: null
+        };
+
+        function hideCustomContextMenu() {
+            const menu = document.getElementById('custom-context-menu');
+            if (!menu) return;
+            menu.classList.remove('show');
+            menu.setAttribute('aria-hidden', 'true');
+            menu.innerHTML = '';
+            contextMenuState = { type: null, inputEl: null, queueData: null };
+        }
+
+        function buildCustomContextMenu(items) {
+            const menu = document.getElementById('custom-context-menu');
+            if (!menu) return;
+            menu.innerHTML = '';
+            items.forEach((item) => {
+                if (item.type === 'separator') {
+                    const sep = document.createElement('div');
+                    sep.className = 'custom-context-menu-separator';
+                    menu.appendChild(sep);
+                    return;
+                }
+                const btn = document.createElement('button');
+                btn.type = 'button';
+                btn.className = 'custom-context-menu-item';
+                const labelEl = document.createElement('span');
+                labelEl.className = 'custom-context-menu-label';
+                labelEl.textContent = item.label;
+                btn.appendChild(labelEl);
+                if (item.shortcut) {
+                    const shortcutEl = document.createElement('span');
+                    shortcutEl.className = 'custom-context-menu-shortcut';
+                    shortcutEl.textContent = item.shortcut;
+                    btn.appendChild(shortcutEl);
+                }
+                btn.disabled = !!item.disabled;
+                btn.addEventListener('click', (event) => {
+                    event.stopPropagation();
+                    hideCustomContextMenu();
+                    if (typeof item.action === 'function' && !item.disabled) {
+                        item.action();
+                    }
+                });
+                menu.appendChild(btn);
+            });
+        }
+
+        function showCustomContextMenu(x, y) {
+            const menu = document.getElementById('custom-context-menu');
+            if (!menu) return;
+            menu.classList.add('show');
+            menu.setAttribute('aria-hidden', 'false');
+            const menuWidth = menu.offsetWidth;
+            const menuHeight = menu.offsetHeight;
+            const maxLeft = window.innerWidth - menuWidth - 8;
+            const maxTop = window.innerHeight - menuHeight - 8;
+            menu.style.left = `${Math.max(8, Math.min(x, maxLeft))}px`;
+            menu.style.top = `${Math.max(8, Math.min(y, maxTop))}px`;
+        }
+
+        function setClipboardText(text) {
+            const textValue = String(text ?? '');
+            if (window.api && window.api.set_clipboard_text) {
+                try { window.api.set_clipboard_text(textValue); } catch (_) {}
+                return true;
+            }
+            if (navigator.clipboard && navigator.clipboard.writeText) {
+                navigator.clipboard.writeText(textValue).catch(() => {});
+                return true;
+            }
             return false;
+        }
+
+        function getClipboardText() {
+            if (window.api && window.api.get_clipboard_text) {
+                try { return window.api.get_clipboard_text(); } catch (_) {}
+            }
+            if (navigator.clipboard && navigator.clipboard.readText) {
+                return navigator.clipboard.readText();
+            }
+            return Promise.resolve('');
+        }
+
+        function tryCopyText(text) {
+            if (text == null || text === '') return;
+            const textValue = String(text);
+            if (setClipboardText(textValue)) return;
+            const temp = document.createElement('textarea');
+            temp.value = textValue;
+            document.body.appendChild(temp);
+            temp.select();
+            try { document.execCommand('copy'); } catch (_) {}
+            document.body.removeChild(temp);
+        }
+
+        function resolveQueueMenuData(target) {
+            const queueArea = target.closest('.queue-item, .queue-playlist-video-item, .queue-playlist-card');
+            if (!queueArea) return null;
+
+            const taskHost = target.closest('[data-task-id]');
+            if (taskHost) {
+                const taskId = Number(taskHost.getAttribute('data-task-id'));
+                const task = downloadQueue.find((t) => Number(t.id) === taskId);
+                if (!task) return null;
+                return {
+                    title: task.title || '',
+                    thumbnail: task.thumbnail || '',
+                    url: task.url || ''
+                };
+            }
+
+            const playlistCard = target.closest('.queue-playlist-card');
+            if (playlistCard) {
+                const playlistId = playlistCard.getAttribute('data-playlist-id');
+                if (!playlistId) return null;
+                const playlistTasks = downloadQueue.filter((t) => String(t.playlistGroupId) === String(playlistId));
+                if (!playlistTasks.length) return null;
+                return {
+                    title: playlistTasks[0].playlistTitle || '播放清單',
+                    thumbnail: playlistTasks[0].thumbnail || '',
+                    url: playlistTasks[0].url || ''
+                };
+            }
+
+            return null;
+        }
+
+        function openQueueDataOnYoutube(queueData) {
+            if (!queueData || !queueData.url) return;
+            try {
+                if (window.api && window.api.open_external_link) {
+                    window.api.open_external_link(queueData.url);
+                } else {
+                    window.open(queueData.url, '_blank');
+                }
+            } catch (_) {
+                try { window.open(queueData.url, '_blank'); } catch (__) {}
+            }
+        }
+
+        function executeInputCommand(command, inputEl) {
+            if (!inputEl) return;
+            inputEl.focus();
+            if (command === 'copy' || command === 'cut') {
+                const start = inputEl.selectionStart ?? 0;
+                const end = inputEl.selectionEnd ?? 0;
+                const selected = (start !== end) ? inputEl.value.slice(start, end) : '';
+                if (selected) {
+                    setClipboardText(selected);
+                    if (command === 'cut') {
+                        inputEl.setRangeText('', start, end, 'start');
+                        inputEl.dispatchEvent(new Event('input', { bubbles: true }));
+                    }
+                }
+                return;
+            }
+            if (command === 'paste') {
+                getClipboardText().then((text) => {
+                    const start = inputEl.selectionStart ?? inputEl.value.length;
+                    const end = inputEl.selectionEnd ?? inputEl.value.length;
+                    inputEl.setRangeText(String(text ?? ''), start, end, 'end');
+                    inputEl.dispatchEvent(new Event('input', { bubbles: true }));
+                }).catch(() => {});
+                return;
+            }
+            try { document.execCommand(command); } catch (_) {}
+        }
+
+        function getInputMenuItems(inputEl) {
+            const hasSelection = (inputEl.selectionStart ?? 0) !== (inputEl.selectionEnd ?? 0);
+            const hasValue = !!inputEl.value;
+            return [
+                { label: '復原', shortcut: 'Ctrl+Z', action: () => executeInputCommand('undo', inputEl) },
+                { type: 'separator' },
+                { label: '剪下', shortcut: 'Ctrl+X', action: () => executeInputCommand('cut', inputEl), disabled: !hasSelection },
+                { label: '複製', shortcut: 'Ctrl+C', action: () => executeInputCommand('copy', inputEl), disabled: !hasSelection },
+                { label: '貼上', shortcut: 'Ctrl+V', action: () => executeInputCommand('paste', inputEl) },
+                { type: 'separator' },
+                { label: '全選', shortcut: 'Ctrl+A', action: () => executeInputCommand('selectAll', inputEl), disabled: !hasValue }
+            ];
+        }
+
+        function getQueueMenuItems(queueData) {
+            return [
+                { label: '複製標題', action: () => tryCopyText(queueData.title), disabled: !queueData.title },
+                { label: '複製縮圖', action: () => { try { window.api && window.api.set_clipboard_image && window.api.set_clipboard_image(queueData.thumbnail); } catch(_) {} }, disabled: !queueData.thumbnail },
+                { label: '複製影片網址', action: () => tryCopyText(queueData.url), disabled: !queueData.url },
+                { type: 'separator' },
+                { label: '在YouTube上播放', action: () => openQueueDataOnYoutube(queueData), disabled: !queueData.url }
+            ];
+        }
+
+        document.addEventListener('click', function(event) {
+            const menu = document.getElementById('custom-context-menu');
+            if (menu && menu.classList.contains('show') && !menu.contains(event.target)) {
+                hideCustomContextMenu();
+            }
+        });
+        window.addEventListener('resize', hideCustomContextMenu);
+        document.getElementById('queue-list')?.addEventListener('scroll', hideCustomContextMenu, { passive: true });
+
+        // 自訂右鍵選單（僅限輸入框與佇列）
+        document.addEventListener('contextmenu', (e) => {
+            const inputTarget = e.target.closest('input[type="text"], input[type="password"], textarea');
+            if (inputTarget) {
+                e.preventDefault();
+                contextMenuState = { type: 'input', inputEl: inputTarget, queueData: null };
+                buildCustomContextMenu(getInputMenuItems(inputTarget));
+                showCustomContextMenu(e.clientX, e.clientY);
+                return;
+            }
+
+            const queueData = resolveQueueMenuData(e.target);
+            if (queueData) {
+                e.preventDefault();
+                contextMenuState = { type: 'queue', inputEl: null, queueData: queueData };
+                buildCustomContextMenu(getQueueMenuItems(queueData));
+                showCustomContextMenu(e.clientX, e.clientY);
+                return;
+            }
+
+            hideCustomContextMenu();
         });
         
         // 禁止鍵盤快捷鍵（F12、Ctrl+Shift+I、Ctrl+U等）
         document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') {
+                hideCustomContextMenu();
+            }
             // 禁止 F12（開發者工具）
             if (e.key === 'F12') {
                 e.preventDefault();
@@ -4309,7 +5900,7 @@
             
             const content = document.getElementById('playlist-modal-content');
             if (content) {
-                content.innerHTML = '<div style="text-align:center;padding:40px;color:#aaa;">載入中...</div>';
+                content.innerHTML = '<div style="text-align:center;padding:40px;color:var(--of-text-muted);">載入中...</div>';
             }
             
             if (playlistInfo) {
@@ -4443,7 +6034,7 @@
                 content.innerHTML = '';
 
                 if (playlistVideosData.length === 0) {
-                    content.innerHTML = '<div style="text-align:center;padding:40px;color:#aaa;">播放清單中沒有影片</div>';
+                    content.innerHTML = '<div style="text-align:center;padding:40px;color:var(--of-text-muted);">播放清單中沒有影片</div>';
                     console.log('[前端] 播放清單為空');
                     updatePlaylistSelectedCount();
                     hideLoading(); // 關閉載入中覆蓋層
@@ -4481,7 +6072,7 @@
                             </div>
                             <div class="playlist-video-controls">
                                 <div class="playlist-video-select">
-                                    <label style="display:block;font-size:11px;color:#aaa;margin-bottom:3px;" id="playlist-quality-label-${index}">${(video.format === 'mp3') ? '位元率' : '畫質'}</label>
+                                    <label style="display:block;font-size:11px;color:var(--of-text-muted);margin-bottom:3px;" id="playlist-quality-label-${index}">${(video.format === 'mp3') ? '位元率' : '畫質'}</label>
                                     <div class="custom-select ${playlistUseHighestQuality ? 'disabled' : ''}" id="playlist-quality-${index}">
                                         <div class="custom-select-header" onclick="togglePlaylistSelect('playlist-quality-${index}', ${index}, 'quality')">
                                             <span class="custom-select-text">${(video.format === 'mp3') ? (video.quality ? (AUDIO_QUALITIES.find(q => q.value === video.quality)?.label || '192kbps') : '192kbps') : (video.quality || '1080p')}</span>
@@ -4496,7 +6087,7 @@
                                     </div>
                                 </div>
                                 <div class="playlist-video-select">
-                                    <label style="display:block;font-size:11px;color:#aaa;margin-bottom:3px;">格式</label>
+                                    <label style="display:block;font-size:11px;color:var(--of-text-muted);margin-bottom:3px;">格式</label>
                                     <div class="custom-select ${playlistGlobalFormatMode && playlistGlobalFormatMode !== 'individual' ? 'disabled' : ''}" id="playlist-format-${index}">
                                         <div class="custom-select-header" onclick="togglePlaylistSelect('playlist-format-${index}', ${index}, 'format')">
                                             <span class="custom-select-text">${(video.format === 'mp3') ? '音訊(mp3)' : '影片(mp4)'}</span>
@@ -5493,7 +7084,13 @@
                 });
                 bindUrlInputSelectAllOnClick(queueInput);
             }
+            try { initDevCommandInputHints(); } catch (eInitH) {}
             showPage('home');
+            setTimeout(function() {
+                try {
+                    if (typeof loadSettings === 'function') loadSettings();
+                } catch (eCfg) {}
+            }, 150);
         });
     </script>
 </body>

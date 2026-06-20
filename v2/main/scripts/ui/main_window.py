@@ -17,10 +17,16 @@ if root_dir not in sys.path:
 from PySide6.QtWidgets import QApplication, QMainWindow, QSystemTrayIcon, QStyle, QMessageBox
 from PySide6.QtWebEngineWidgets import QWebEngineView
 from PySide6.QtWebChannel import QWebChannel
-from PySide6.QtCore import QUrl, QSettings
+from PySide6.QtCore import QUrl, QSettings, Qt
 from PySide6.QtGui import QIcon
 from scripts.core.api import Api
-from scripts.config.constants import APP_NAME, WINDOW_WIDTH, WINDOW_HEIGHT
+from scripts.config.constants import (
+    APP_NAME,
+    WINDOW_WIDTH,
+    WINDOW_HEIGHT,
+    WINDOW_MIN_WIDTH,
+    WINDOW_MIN_HEIGHT,
+)
 from scripts.utils.logger import main_window_console, LogLevel
 from scripts.utils.file_utils import safe_path_join, get_assets_path
 from scripts.ui.html_content import get_html_content
@@ -38,8 +44,14 @@ class MainWindow(QMainWindow):
     def init_ui(self):
         """初始化 UI"""
         self.setWindowTitle(APP_NAME)
+        self.setMinimumSize(WINDOW_MIN_WIDTH, WINDOW_MIN_HEIGHT)
         self.resize(WINDOW_WIDTH, WINDOW_HEIGHT)
         self._restore_window_geometry()
+        if self.width() < WINDOW_MIN_WIDTH or self.height() < WINDOW_MIN_HEIGHT:
+            self.resize(
+                max(self.width(), WINDOW_MIN_WIDTH),
+                max(self.height(), WINDOW_MIN_HEIGHT),
+            )
         
         # 設定視窗圖示
         icon_path = safe_path_join(get_assets_path(self.root_dir), 'icon.ico')
@@ -51,6 +63,8 @@ class MainWindow(QMainWindow):
         
         # 創建 WebEngineView
         self.web_view = QWebEngineView()
+        # 關閉 Qt/PySide6 內建右鍵選單，改由前端自訂選單處理
+        self.web_view.setContextMenuPolicy(Qt.ContextMenuPolicy.NoContextMenu)
         self.setCentralWidget(self.web_view)
         
         # 啟用開發者工具（用於調試）
@@ -185,9 +199,8 @@ class MainWindow(QMainWindow):
                 // 依目前選單狀態設定初始顯示
                 var vt = document.getElementById('version-tag');
                 if (vt) {{
-                    var titleImg = document.getElementById('title-img');
-                    var searchRow = document.getElementById('search-row');
-                    var visible = (titleImg && titleImg.style.display !== 'none') || (searchRow && searchRow.style.display !== 'none');
+                    var homeCenter = document.getElementById('home-center');
+                    var visible = homeCenter && homeCenter.style.display !== 'none';
                     vt.style.display = visible ? 'block' : 'none';
                 }}
 
@@ -199,9 +212,8 @@ class MainWindow(QMainWindow):
                         try {{ _orig(p); }} finally {{
                             var vt2 = document.getElementById('version-tag');
                             if (vt2) {{
-                                var titleImg2 = document.getElementById('title-img');
-                                var searchRow2 = document.getElementById('search-row');
-                                var visible2 = (p === 'home') || (titleImg2 && titleImg2.style.display !== 'none') || (searchRow2 && searchRow2.style.display !== 'none');
+                                var homeCenter2 = document.getElementById('home-center');
+                                var visible2 = (p === 'home') || (homeCenter2 && homeCenter2.style.display !== 'none');
                                 vt2.style.display = visible2 ? 'block' : 'none';
                             }}
                         }}

@@ -7,7 +7,7 @@
 # 應用程式資訊
 APP_NAME = "oldfish影片下載器"
 APP_VERSION = "2.1.0-Release"
-APP_VERSION_HOME = "2.1.0-Release - 2026.01.20"
+APP_VERSION_HOME = "2.2.0-Release - 2026.05.10"
 
 # Console 日誌預設等級（建議正式使用 WARNING：只顯示必要警告/錯誤）
 # 可選："DEBUG" / "INFO" / "WARNING" / "ERROR"
@@ -29,11 +29,17 @@ DEFAULT_SETTINGS = {
     'addResolutionToFilename': False,
     'customDownloadPath': '',
     'maxConcurrentDownloads': 3,
-    'playlistNotificationMode': 'complete'  # 'complete': 整個播放清單完成才通知, 'each': 每部影片完成就通知
+    'playlistNotificationMode': 'complete',  # 'complete': 整個播放清單完成才通知, 'each': 每部影片完成就通知
+    'enableDevCommands': False,
+    'hideDevCommandEnableWarning': False,
+    'themeColor': '#2ecc71',  # 主題主色調（十六進位色碼）
+    'lightMode': False,  # 淺色模式
 }
 
 # 視窗設定
 WINDOW_WIDTH = 1000
 WINDOW_HEIGHT = 640
+WINDOW_MIN_WIDTH = 800
+WINDOW_MIN_HEIGHT = 520
 SETTINGS_WINDOW_WIDTH = 500
 SETTINGS_WINDOW_HEIGHT = 350

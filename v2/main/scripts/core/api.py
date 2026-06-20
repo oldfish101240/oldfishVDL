@@ -10,6 +10,8 @@ import json
 import threading
 import subprocess
 import yt_dlp
+import base64
+import urllib.request
 
 # 添加父目錄到路徑，以便導入其他模組
 current_dir = os.path.dirname(os.path.abspath(__file__))
@@ -20,6 +22,8 @@ if root_dir not in sys.path:
 
 from PySide6.QtCore import QObject, Slot, Signal, QTimer, QEventLoop
 from PySide6.QtWidgets import QFileDialog
+from PySide6.QtGui import QGuiApplication
+from PySide6.QtGui import QImage
 from scripts.utils.logger import api_console, download_console, video_info_console, debug_console, LogLevel
 from scripts.utils.file_utils import safe_path_join, get_download_path, resolve_relative_path, get_deno_path
 import re
@@ -170,6 +174,90 @@ class Api(QObject):
     def set_notification_handler(self, handler):
         """設定通知處理器，由主視窗提供"""
         self.notification_handler = handler
+
+    @Slot(str, result=str)
+    def set_clipboard_text(self, text):
+        """寫入系統剪貼簿文字（供前端右鍵選單使用）"""
+        try:
+            cb = QGuiApplication.clipboard()
+            cb.setText(str(text or ''))
+            return "OK"
+        except Exception as e:
+            api_console(f"寫入剪貼簿失敗: {e}", level=LogLevel.ERROR)
+            return f"失敗: {e}"
+
+    @Slot(result=str)
+    def get_clipboard_text(self):
+        """讀取系統剪貼簿文字（供前端右鍵選單使用）"""
+        try:
+            cb = QGuiApplication.clipboard()
+            return cb.text() or ""
+        except Exception as e:
+            api_console(f"讀取剪貼簿失敗: {e}", level=LogLevel.ERROR)
+            return ""
+
+    @Slot(str, result=str)
+    def set_clipboard_image(self, image_source):
+        """
+        寫入系統剪貼簿圖片。
+        支援:
+        - http(s) URL
+        - 本機路徑（絕對/相對）
+        - file:// URL
+        - data URL: data:image/png;base64,...
+        """
+        try:
+            src = str(image_source or "").strip()
+            if not src:
+                return "圖片來源不可用"
+
+            img = QImage()
+
+            # data URL
+            if src.startswith("data:image/") and "base64," in src:
+                b64 = src.split("base64,", 1)[1].strip()
+                image_bytes = base64.b64decode(b64)
+                img = QImage.fromData(image_bytes)
+            # file:// URL
+            elif src.lower().startswith("file://"):
+                # Windows 可能是 file:///C:/...
+                local_path = src[7:]
+                if local_path.startswith("/"):
+                    local_path = local_path[1:]
+                local_path = local_path.replace("/", os.sep)
+                img.load(local_path)
+            # http(s) URL
+            elif src.lower().startswith("http://") or src.lower().startswith("https://"):
+                req = urllib.request.Request(
+                    src,
+                    headers={
+                        "User-Agent": "oldfish-Video-Downloader",
+                        "Accept": "image/*,*/*;q=0.8",
+                    },
+                )
+                with urllib.request.urlopen(req, timeout=10) as resp:
+                    image_bytes = resp.read()
+                img = QImage.fromData(image_bytes)
+            # 本機路徑（相對/絕對）
+            else:
+                try:
+                    # 先把相對路徑解析到 root_dir 下
+                    local_path = resolve_relative_path(src, self.root_dir)
+                except Exception:
+                    local_path = src
+                if not os.path.isabs(local_path):
+                    local_path = os.path.abspath(os.path.join(self.root_dir, local_path))
+                img.load(local_path)
+
+            if img.isNull():
+                return "圖片解析失敗"
+
+            cb = QGuiApplication.clipboard()
+            cb.setImage(img)
+            return "OK"
+        except Exception as e:
+            api_console(f"寫入剪貼簿圖片失敗: {e}", level=LogLevel.ERROR)
+            return f"失敗: {e}"
     
     def _format_eta(self, eta_seconds):
         """格式化 ETA（預估剩餘時間）"""

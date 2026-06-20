@@ -212,18 +212,24 @@ def extract_video_info(url, root_dir):
         return None
 
 def format_duration(seconds):
-    """格式化時長"""
-    if not seconds:
+    """格式化時長（yt-dlp 可能回傳 float 秒數）"""
+    if seconds is None:
         return "未知時長"
-    
-    hours = seconds // 3600
-    minutes = (seconds % 3600) // 60
-    seconds = seconds % 60
-    
+    try:
+        total = int(float(seconds))
+    except (TypeError, ValueError):
+        return "未知時長"
+    if total < 0:
+        return "未知時長"
+
+    hours = total // 3600
+    minutes = (total % 3600) // 60
+    secs = total % 60
+
     if hours > 0:
-        return f"{hours:02d}:{minutes:02d}:{seconds:02d}"
+        return f"{hours:02d}:{minutes:02d}:{secs:02d}"
     else:
-        return f"{minutes:02d}:{seconds:02d}"
+        return f"{minutes:02d}:{secs:02d}"
 
 def cache_thumbnail(thumb_url, root_dir):
     """快取縮圖"""

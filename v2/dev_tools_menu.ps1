@@ -150,7 +150,7 @@ function Clean-Downloads {
 function Reset-Settings {
   Push-Location $mainDir
   try {
-    Write-Host "[RESET] settings.json ..."
+    Write-Host "[RESET] settings.json (full DEFAULT_SETTINGS from constants.py, e.g. hideDevCommandEnableWarning) ..."
     & $pythonExe -c "import json, sys; from pathlib import Path; sys.path.insert(0, '.'); from scripts.config.constants import DEFAULT_SETTINGS; p=Path('main') / 'settings.json'; p.parent.mkdir(parents=True, exist_ok=True); p.write_text(json.dumps(DEFAULT_SETTINGS, ensure_ascii=False, indent=2), encoding='utf-8')"
     if ($LASTEXITCODE -ne 0) {
       Write-Host "[ERROR] Failed to reset settings.json"
