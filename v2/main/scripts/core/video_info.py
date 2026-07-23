@@ -212,24 +212,24 @@ def extract_video_info(url, root_dir):
         return None
 
 def format_duration(seconds):
-    """格式化時長（yt-dlp 可能回傳 float 秒數）"""
-    if seconds is None:
+    """格式化時長"""
+    if not seconds:
         return "未知時長"
     try:
         total = int(float(seconds))
     except (TypeError, ValueError):
         return "未知時長"
     if total < 0:
-        return "未知時長"
+        total = 0
 
     hours = total // 3600
     minutes = (total % 3600) // 60
-    secs = total % 60
-
+    seconds = total % 60
+    
     if hours > 0:
-        return f"{hours:02d}:{minutes:02d}:{secs:02d}"
+        return f"{hours:02d}:{minutes:02d}:{seconds:02d}"
     else:
-        return f"{minutes:02d}:{secs:02d}"
+        return f"{minutes:02d}:{seconds:02d}"
 
 def cache_thumbnail(thumb_url, root_dir):
     """快取縮圖"""
@@ -395,6 +395,18 @@ def extract_playlist_info(url, root_dir):
         
         playlist_title = info_dict.get('title', '無標題播放清單')
         playlist_uploader = info_dict.get('uploader', '未知上傳者')
+        playlist_thumbnail = info_dict.get('thumbnail') or ''
+        if not playlist_thumbnail:
+            thumbs = info_dict.get('thumbnails') or []
+            if isinstance(thumbs, list) and thumbs:
+                try:
+                    best = sorted(thumbs, key=lambda t: max(t.get('width', 0) or 0, t.get('height', 0) or 0))[-1]
+                    playlist_thumbnail = best.get('url') or ''
+                except Exception:
+                    try:
+                        playlist_thumbnail = thumbs[-1].get('url') or ''
+                    except Exception:
+                        playlist_thumbnail = ''
         entries = info_dict.get('entries', [])
         
         video_info_console(f"標題: {playlist_title}")
@@ -450,10 +462,14 @@ def extract_playlist_info(url, root_dir):
             })
             video_info_console(f"影片 {idx + 1} 處理完成")
         
+        if not playlist_thumbnail and videos:
+            playlist_thumbnail = videos[0].get('thumb') or ''
+
         result = {
             'is_playlist': True,
             'playlist_title': playlist_title,
             'playlist_uploader': playlist_uploader,
+            'playlist_thumbnail': playlist_thumbnail,
             'video_count': len(videos),
             'videos': videos,
             'url': url

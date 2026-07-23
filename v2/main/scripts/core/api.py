@@ -10,8 +10,6 @@ import json
 import threading
 import subprocess
 import yt_dlp
-import base64
-import urllib.request
 
 # 添加父目錄到路徑，以便導入其他模組
 current_dir = os.path.dirname(os.path.abspath(__file__))
@@ -22,11 +20,12 @@ if root_dir not in sys.path:
 
 from PySide6.QtCore import QObject, Slot, Signal, QTimer, QEventLoop
 from PySide6.QtWidgets import QFileDialog
-from PySide6.QtGui import QGuiApplication
-from PySide6.QtGui import QImage
+from PySide6.QtGui import QGuiApplication, QImage
 from scripts.utils.logger import api_console, download_console, video_info_console, debug_console, LogLevel
 from scripts.utils.file_utils import safe_path_join, get_download_path, resolve_relative_path, get_deno_path
 import re
+import base64
+import urllib.request
 
 
 def _sanitize_folder_name(name):
@@ -145,6 +144,7 @@ class Api(QObject):
         self.notification_handler = None
         self._last_progress_percent = {}
         self._ytdlp_update_in_progress = False
+        self._restarting = False
         
         # 初始化組件
         self.settings_manager = SettingsManager(root_dir)
@@ -174,90 +174,6 @@ class Api(QObject):
     def set_notification_handler(self, handler):
         """設定通知處理器，由主視窗提供"""
         self.notification_handler = handler
-
-    @Slot(str, result=str)
-    def set_clipboard_text(self, text):
-        """寫入系統剪貼簿文字（供前端右鍵選單使用）"""
-        try:
-            cb = QGuiApplication.clipboard()
-            cb.setText(str(text or ''))
-            return "OK"
-        except Exception as e:
-            api_console(f"寫入剪貼簿失敗: {e}", level=LogLevel.ERROR)
-            return f"失敗: {e}"
-
-    @Slot(result=str)
-    def get_clipboard_text(self):
-        """讀取系統剪貼簿文字（供前端右鍵選單使用）"""
-        try:
-            cb = QGuiApplication.clipboard()
-            return cb.text() or ""
-        except Exception as e:
-            api_console(f"讀取剪貼簿失敗: {e}", level=LogLevel.ERROR)
-            return ""
-
-    @Slot(str, result=str)
-    def set_clipboard_image(self, image_source):
-        """
-        寫入系統剪貼簿圖片。
-        支援:
-        - http(s) URL
-        - 本機路徑（絕對/相對）
-        - file:// URL
-        - data URL: data:image/png;base64,...
-        """
-        try:
-            src = str(image_source or "").strip()
-            if not src:
-                return "圖片來源不可用"
-
-            img = QImage()
-
-            # data URL
-            if src.startswith("data:image/") and "base64," in src:
-                b64 = src.split("base64,", 1)[1].strip()
-                image_bytes = base64.b64decode(b64)
-                img = QImage.fromData(image_bytes)
-            # file:// URL
-            elif src.lower().startswith("file://"):
-                # Windows 可能是 file:///C:/...
-                local_path = src[7:]
-                if local_path.startswith("/"):
-                    local_path = local_path[1:]
-                local_path = local_path.replace("/", os.sep)
-                img.load(local_path)
-            # http(s) URL
-            elif src.lower().startswith("http://") or src.lower().startswith("https://"):
-                req = urllib.request.Request(
-                    src,
-                    headers={
-                        "User-Agent": "oldfish-Video-Downloader",
-                        "Accept": "image/*,*/*;q=0.8",
-                    },
-                )
-                with urllib.request.urlopen(req, timeout=10) as resp:
-                    image_bytes = resp.read()
-                img = QImage.fromData(image_bytes)
-            # 本機路徑（相對/絕對）
-            else:
-                try:
-                    # 先把相對路徑解析到 root_dir 下
-                    local_path = resolve_relative_path(src, self.root_dir)
-                except Exception:
-                    local_path = src
-                if not os.path.isabs(local_path):
-                    local_path = os.path.abspath(os.path.join(self.root_dir, local_path))
-                img.load(local_path)
-
-            if img.isNull():
-                return "圖片解析失敗"
-
-            cb = QGuiApplication.clipboard()
-            cb.setImage(img)
-            return "OK"
-        except Exception as e:
-            api_console(f"寫入剪貼簿圖片失敗: {e}", level=LogLevel.ERROR)
-            return f"失敗: {e}"
     
     def _format_eta(self, eta_seconds):
         """格式化 ETA（預估剩餘時間）"""
@@ -975,12 +891,14 @@ class Api(QObject):
     def check_file_exists_before_download(self, url, quality, format_type, original_format=None):
         """在開始下載前檢查文件是否存在（不開始下載）"""
         try:
+            download_console(f"[重複檢查] 開始檢查: url={url}, quality={quality}, format={format_type}, original_format={original_format}", level=LogLevel.INFO)
             # 規範化格式
             fmt = (original_format or format_type or '').strip().lower()
             if fmt in ('mp3', 'aac', 'flac', 'wav', 'audio'):
                 normalized_format = '音訊'
             else:
                 normalized_format = '影片'
+            download_console(f"[重複檢查] 規範化格式: fmt={fmt}, normalized_format={normalized_format}", level=LogLevel.DEBUG)
             
             # 規範化畫質
             q = (quality or '').strip()
@@ -997,6 +915,7 @@ class Api(QObject):
             settings = self.settings_manager.load_settings()
             add_resolution = settings.get('addResolutionToFilename', False)
             resolved_download_dir = get_download_path(self.root_dir, self.settings_manager)
+            download_console(f"[重複檢查] 下載路徑: {resolved_download_dir}, add_resolution={add_resolution}", level=LogLevel.DEBUG)
             
             # 檢查文件是否存在
             existing_file = None
@@ -1015,7 +934,7 @@ class Api(QObject):
                 
                 thread = threading.Thread(target=check_file, daemon=True)
                 thread.start()
-                thread.join(timeout=5)  # 5秒超時
+                thread.join(timeout=10)  # 10秒超時
                 
                 if thread.is_alive():
                     download_console(f"文件存在檢查超時，跳過檢查", level=LogLevel.WARNING)
@@ -1030,10 +949,14 @@ class Api(QObject):
                 existing_file = None
             
             if existing_file:
+                download_console(f"[重複檢查] 發現重複檔案: {existing_file}", level=LogLevel.INFO)
                 return f"FILE_EXISTS:{existing_file}"
+            download_console(f"[重複檢查] 未發現重複檔案", level=LogLevel.INFO)
             return "FILE_NOT_EXISTS"
         except Exception as e:
-            download_console(f"檢查文件是否存在時出錯: {e}", level=LogLevel.ERROR)
+            download_console(f"[重複檢查] 檢查文件是否存在時出錯: {e}", level=LogLevel.ERROR)
+            import traceback
+            download_console(f"[重複檢查] 錯誤堆棧: {traceback.format_exc()}", level=LogLevel.ERROR)
             return "FILE_NOT_EXISTS"  # 出錯時假設文件不存在，允許下載
     
     @Slot(str, result=str)
@@ -1292,12 +1215,13 @@ class Api(QObject):
     
     def _check_file_exists(self, url, quality, format_type, downloads_dir, add_resolution, original_format=None):
         """檢查目標文件是否存在，返回文件路徑（如果存在）
-        
+
         只檢查相同格式的文件，例如：
         - 如果 original_format='mp3'，只檢查 .mp3 文件
         - 如果 original_format='mp4'，只檢查 .mp4, .mkv, .webm 等影片格式
         """
         try:
+            download_console(f"[重複檢查] _check_file_exists 開始: url={url}, quality={quality}, format_type={format_type}, downloads_dir={downloads_dir}, add_resolution={add_resolution}, original_format={original_format}", level=LogLevel.DEBUG)
             # 先獲取視頻信息以確定標題和高度
             import yt_dlp
             ffmpeg_path = safe_path_join(self.root_dir, "lib", "ffmpeg-7.1.1-essentials_build", "ffmpeg-7.1.1-essentials_build", "bin", "ffmpeg.exe")
@@ -1319,11 +1243,13 @@ class Api(QObject):
             
             with yt_dlp.YoutubeDL(ydl_opts) as ydl:
                 info_dict = ydl.extract_info(url, download=False)
-            
+
             title = info_dict.get('title', '無標題影片')
+            download_console(f"[重複檢查] 影片標題: {title}", level=LogLevel.DEBUG)
             # 清理標題中的非法字符
             import re
             safe_title = re.sub(r'[<>:"/\\|?*]', '', title)
+            download_console(f"[重複檢查] 清理後標題: {safe_title}", level=LogLevel.DEBUG)
             
             # 規範化格式和畫質（format_type 可能是 '音訊'/'影片' 或 'mp3'/'mp4' 等）
             fmt = (original_format or format_type or '').strip().lower()
@@ -1359,27 +1285,52 @@ class Api(QObject):
                 # mp3 等音訊：不論 add_resolution，都檢查兩種檔名（下載時可能不同設定）
                 possible_files.append(f"{safe_title}.{ext}")
                 possible_files.append(f"{safe_title}_{qnum}kbps.{ext}")
-            elif add_resolution:
-                possible_files.append(f"{safe_title}_{height}p.{ext}")
             else:
+                # 影片：檢查多種可能的檔名（包含不同高度）
                 possible_files.append(f"{safe_title}.{ext}")
+                if add_resolution:
+                    possible_files.append(f"{safe_title}_{height}p.{ext}")
+                    # 也檢查用戶選擇的畫質（以防實際高度不同）
+                    possible_files.append(f"{safe_title}_{qnum}p.{ext}")
+                    # 檢查常見畫質
+                    for common_height in ['2160p', '1440p', '1080p', '720p', '480p', '360p']:
+                        if common_height != f"{height}p" and common_height != f"{qnum}p":
+                            possible_files.append(f"{safe_title}_{common_height}.{ext}")
             
             # 檢查文件是否存在（只檢查相同格式）
+            download_console(f"[重複檢查] 檢查 {len(possible_files)} 個可能的檔名: {possible_files}", level=LogLevel.DEBUG)
             for filename in possible_files:
                 file_path = os.path.join(downloads_dir, filename)
+                download_console(f"[重複檢查] 檢查檔案: {file_path}", level=LogLevel.DEBUG)
                 if os.path.exists(file_path):
+                    download_console(f"[重複檢查] 檔案存在: {file_path}", level=LogLevel.INFO)
                     return file_path
-            
-            # 音訊：若精確檔名未命中，掃描資料夾內同副檔名且檔名以標題開頭的檔案
-            if normalized_format == '音訊' and safe_title:
-                try:
-                    for name in os.listdir(downloads_dir):
-                        if name.lower().endswith(f'.{ext}') and os.path.isfile(os.path.join(downloads_dir, name)):
-                            base = os.path.splitext(name)[0]
-                            if base == safe_title or base.startswith(safe_title + '_'):
-                                return os.path.join(downloads_dir, name)
-                except OSError:
-                    pass
+                else:
+                    download_console(f"[重複檢查] 檔案不存在: {file_path}", level=LogLevel.DEBUG)
+
+            # 精確檔名未命中，掃描資料夾內同副檔名且檔名相似的檔案
+            # 這是為了處理 yt-dlp 對特殊字符的不同處理方式（例如 / → ⧸）
+            try:
+                download_console(f"[重複檢查] 開始掃描資料夾尋找相似檔案", level=LogLevel.DEBUG)
+                for name in os.listdir(downloads_dir):
+                    if name.lower().endswith(f'.{ext}') and os.path.isfile(os.path.join(downloads_dir, name)):
+                        base = os.path.splitext(name)[0]
+                        # 移除所有非字母數字字符進行比較
+                        import unicodedata
+                        def normalize_filename(s):
+                            # 移除所有非字母數字和空格的字符
+                            s = unicodedata.normalize('NFKD', str(s))
+                            s = ''.join(c for c in s if c.isalnum() or c.isspace() or c in '()[]{}')
+                            return s.lower().replace(' ', '')
+
+                        normalized_safe_title = normalize_filename(safe_title)
+                        normalized_base = normalize_filename(base)
+
+                        if normalized_safe_title == normalized_base or normalized_base.startswith(normalized_safe_title):
+                            download_console(f"[重複檢查] 發現相似檔案: {name}", level=LogLevel.INFO)
+                            return os.path.join(downloads_dir, name)
+            except OSError as e:
+                download_console(f"[重複檢查] 掃描資料夾時出錯: {e}", level=LogLevel.WARNING)
             
             # 只檢查用戶指定的格式，不檢查其他擴展名
             # 這樣可以允許用戶下載同一影片的不同格式（例如已有 mp4，可以再下載 mp3）
@@ -1560,9 +1511,9 @@ class Api(QObject):
 
                 thread = threading.Thread(target=check_file, daemon=True)
                 thread.start()
-                download_console("[DBG] start_download 主線程即將 thread.join(1.5s)", level=LogLevel.DEBUG)
-                # 主線程最多等 1.5 秒，避免長期佔用導致「開啟資料夾」等操作無回應
-                thread.join(timeout=1.5)
+                download_console("[DBG] start_download 主線程即將 thread.join(3s)", level=LogLevel.DEBUG)
+                # 主線程最多等 3 秒，避免長期佔用導致「開啟資料夾」等操作無回應
+                thread.join(timeout=3)
                 download_console("[DBG] start_download 主線程 thread.join 已返回", level=LogLevel.DEBUG)
 
                 if thread.is_alive():
@@ -1841,6 +1792,80 @@ class Api(QObject):
             return f"失敗: {e}"
     
     @Slot(str, result=str)
+    def set_clipboard_text(self, text):
+        """寫入系統剪貼簿文字（供前端右鍵選單使用）"""
+        try:
+            cb = QGuiApplication.clipboard()
+            cb.setText(str(text or ''))
+            return "OK"
+        except Exception as e:
+            api_console(f"寫入剪貼簿失敗: {e}", level=LogLevel.ERROR)
+            return f"失敗: {e}"
+
+    @Slot(result=str)
+    def get_clipboard_text(self):
+        """讀取系統剪貼簿文字（供前端右鍵選單使用）"""
+        try:
+            cb = QGuiApplication.clipboard()
+            return cb.text() or ""
+        except Exception as e:
+            api_console(f"讀取剪貼簿失敗: {e}", level=LogLevel.ERROR)
+            return ""
+
+    @Slot(str, result=str)
+    def set_clipboard_image(self, image_source):
+        """
+        寫入系統剪貼簿圖片。
+        支援 http(s) URL、本機路徑、file:// URL、data URL。
+        """
+        try:
+            src = str(image_source or "").strip()
+            if not src:
+                return "圖片來源不可用"
+
+            img = QImage()
+
+            if src.startswith("data:image/") and "base64," in src:
+                b64 = src.split("base64,", 1)[1].strip()
+                image_bytes = base64.b64decode(b64)
+                img = QImage.fromData(image_bytes)
+            elif src.lower().startswith("file://"):
+                local_path = src[7:]
+                if local_path.startswith("/"):
+                    local_path = local_path[1:]
+                local_path = local_path.replace("/", os.sep)
+                img.load(local_path)
+            elif src.lower().startswith("http://") or src.lower().startswith("https://"):
+                req = urllib.request.Request(
+                    src,
+                    headers={
+                        "User-Agent": "oldfish-Video-Downloader",
+                        "Accept": "image/*,*/*;q=0.8",
+                    },
+                )
+                with urllib.request.urlopen(req, timeout=10) as resp:
+                    image_bytes = resp.read()
+                img = QImage.fromData(image_bytes)
+            else:
+                try:
+                    local_path = resolve_relative_path(src, self.root_dir)
+                except Exception:
+                    local_path = src
+                if not os.path.isabs(local_path):
+                    local_path = os.path.abspath(os.path.join(self.root_dir, local_path))
+                img.load(local_path)
+
+            if img.isNull():
+                return "圖片解析失敗"
+
+            cb = QGuiApplication.clipboard()
+            cb.setImage(img)
+            return "OK"
+        except Exception as e:
+            api_console(f"寫入剪貼簿圖片失敗: {e}", level=LogLevel.ERROR)
+            return f"失敗: {e}"
+    
+    @Slot(str, result=str)
     def open_external_link(self, url):
         """使用系統預設瀏覽器開啟外部連結"""
         try:
@@ -2066,88 +2091,68 @@ class Api(QObject):
             api_console(f"重新整理版本號失敗: {e}", level=LogLevel.ERROR)
             return f"更新失敗: {e}"
 
+    def _collect_launcher_cli_args(self):
+        """收集需轉交 launcher / main.pyw 的 CLI 參數。"""
+        known = ('--safe', '--no-gpu', '--require-admin', '--launcher-elevated')
+        args = []
+        for arg in sys.argv[1:]:
+            if arg in known:
+                args.append(arg)
+        return args
+
+    def _resolve_restart_command(self):
+        """組合重啟命令：啟動 oldfishVDL.exe --restart（由 launcher 等待舊程序結束）。"""
+        app_root = os.path.normpath(os.path.join(self.root_dir, os.pardir))
+        cli_args = ['--restart'] + self._collect_launcher_cli_args()
+        for name in ('oldfishVDL.exe', 'oldfish影片下載器.exe'):
+            exe = os.path.join(app_root, name)
+            if os.path.isfile(exe):
+                return [exe] + cli_args, app_root
+        raise FileNotFoundError('找不到 oldfishVDL.exe')
+
+    def _start_detached_process(self, cmd, cwd):
+        """以獨立程序啟動，不阻塞、不繼承主程序主控台。"""
+        api_console(f"啟動新程序: {' '.join(cmd)} cwd={cwd}", level=LogLevel.INFO)
+        kwargs = {'cwd': cwd, 'close_fds': True}
+        if sys.platform.startswith('win'):
+            si = subprocess.STARTUPINFO()
+            si.dwFlags |= subprocess.STARTF_USESHOWWINDOW
+            si.wShowWindow = 0
+            kwargs['startupinfo'] = si
+            kwargs['creationflags'] = (
+                subprocess.DETACHED_PROCESS
+                | subprocess.CREATE_NEW_PROCESS_GROUP
+                | getattr(subprocess, 'CREATE_NO_WINDOW', 0)
+            )
+        else:
+            kwargs['start_new_session'] = True
+        subprocess.Popen(cmd, **kwargs)
+
+    def is_restarting(self):
+        """回傳是否正在執行重啟流程。"""
+        return self._restarting
+
     @Slot(result=str)
     def restart_app(self):
-        """重啟應用程式（舊版等價：優先重啟打包 exe，否則重啟腳本）"""
+        """重啟應用程式：啟動 oldfishVDL.exe --restart，再關閉目前視窗。"""
         try:
+            from PySide6.QtWidgets import QApplication
+
             api_console("應用程式重啟請求")
-            # 嘗試啟動同一資料夾上一層的 exe
-            exe_path = os.path.normpath(os.path.join(self.root_dir, os.pardir, 'oldfish影片下載器.exe'))
-            started = False
-            try:
-                if os.path.exists(exe_path):
-                    api_console(f"嘗試啟動 exe: {exe_path}")
-                    try:
-                        si = None
-                        flags = 0
-                        if sys.platform.startswith('win'):
-                            si = subprocess.STARTUPINFO(); si.dwFlags |= subprocess.STARTF_USESHOWWINDOW; si.wShowWindow = 0
-                            flags |= getattr(subprocess, 'CREATE_NO_WINDOW', 0)
-                        subprocess.Popen([exe_path], cwd=os.path.dirname(exe_path), startupinfo=si, creationflags=flags)
-                    except Exception:
-                        subprocess.Popen([exe_path], cwd=os.path.dirname(exe_path))
-                    started = True
-            except Exception as e:
-                api_console(f"啟動 exe 失敗: {e}")
-
-            if not started:
-                # 退而求其次：重啟目前 Python 腳本（優先使用內嵌 pythonw，若無則 python.exe，最後使用目前解譯器）
-                pyw = safe_path_join(self.root_dir, 'main.pyw')
-                embed_dir = safe_path_join(self.root_dir, 'lib', 'python_embed')
-                pythonw = safe_path_join(embed_dir, 'pythonw.exe')
-                python = safe_path_join(embed_dir, 'python.exe')
-                candidates = []
-                if os.path.isfile(pythonw):
-                    candidates.append(pythonw)
-                if os.path.isfile(python):
-                    candidates.append(python)
-                # 最後退回目前執行中的解譯器
-                candidates.append(os.path.normpath(sys.executable))
-                try:
-                    for exe in candidates:
-                        try:
-                            exe_path = os.path.normpath(exe)
-                            script_path = os.path.normpath(pyw)
-                            # 額外檢查：檔案存在且大小合理，避免誤選無效檔
-                            if not (os.path.isfile(exe_path) and os.path.isfile(script_path)):
-                                continue
-                            try:
-                                size_ok = os.path.getsize(exe_path) > 1024 * 50
-                            except Exception:
-                                size_ok = True
-                            if not size_ok:
-                                api_console(f"跳過過小的可執行檔: {exe_path}")
-                                continue
-                            api_console(f"嘗試以解譯器啟動: {exe_path} {script_path}")
-                            try:
-                                si = None
-                                flags = 0
-                                if sys.platform.startswith('win'):
-                                    si = subprocess.STARTUPINFO(); si.dwFlags |= subprocess.STARTF_USESHOWWINDOW; si.wShowWindow = 0
-                                    flags |= getattr(subprocess, 'CREATE_NO_WINDOW', 0)
-                                subprocess.Popen([exe_path, script_path], cwd=os.path.dirname(script_path), startupinfo=si, creationflags=flags)
-                            except Exception:
-                                subprocess.Popen([exe_path, script_path], cwd=os.path.dirname(script_path))
-                            started = True
-                            break
-                        except Exception as inner_e:
-                            api_console(f"嘗試使用 {exe} 重啟失敗: {inner_e}")
-                except Exception as e:
-                    api_console(f"啟動內嵌解譯器失敗: {e}")
-
-            # 關閉目前應用
-            try:
-                from PySide6.QtWidgets import QApplication
-                if started:
-                    QApplication.quit()
-                    return "正在重啟"
-                else:
-                    # 未能啟動新程序，只回報訊息
-                    return "未找到可重啟目標，請手動重新啟動。"
-            except Exception as e:
-                api_console(f"結束目前應用失敗: {e}", level=LogLevel.ERROR)
-                return "重啟流程已嘗試，請確認是否已開啟新視窗。"
+            self._restarting = True
+            cmd, cwd = self._resolve_restart_command()
+            self._start_detached_process(cmd, cwd)
+            app = QApplication.instance()
+            if app:
+                QTimer.singleShot(200, app.quit)
+                return "正在重啟"
+            self._restarting = False
+            return "無法結束目前應用，請手動重新啟動。"
+        except FileNotFoundError:
+            self._restarting = False
+            return "找不到 oldfishVDL.exe，請手動重新啟動。"
         except Exception as e:
+            self._restarting = False
             api_console(f"重啟失敗: {e}", level=LogLevel.ERROR)
             return f"重啟失敗: {e}"
 
@@ -2429,15 +2434,12 @@ class Api(QObject):
                             is_latest = 'already satisfied' in output_text.lower()
                             
                             if was_updated:
-                                # 真的更新了
                                 self._eval_js("window.__ofUpdateProgress && window.__ofUpdateProgress(100, '更新完成');")
                                 self._eval_js(f"window.__ofUpdateDone && window.__ofUpdateDone(true, 'yt-dlp 已成功更新到最新版本！\\n\\n目前版本: {new_version}');")
                             elif is_latest:
-                                # 已經是最新版本
                                 self._eval_js("window.__ofUpdateProgress && window.__ofUpdateProgress(100, '檢查完成');")
                                 self._eval_js(f"window.__ofUpdateDone && window.__ofUpdateDone(true, 'yt-dlp 已經是最新版本！\\n\\n目前版本: {new_version}');")
                             else:
-                                # 其他情況
                                 self._eval_js("window.__ofUpdateProgress && window.__ofUpdateProgress(100, '更新完成');")
                                 self._eval_js(f"window.__ofUpdateDone && window.__ofUpdateDone(true, 'yt-dlp 已更新！\\n\\n目前版本: {new_version}');")
                         except Exception as verify_err:
@@ -2483,22 +2485,22 @@ class Api(QObject):
                 progressOverlay.id = 'update-progress-overlay';
                 progressOverlay.style.cssText = `position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.7); z-index: 10001; display: flex; align-items: center; justify-content: center; font-family: 'Segoe UI', Arial, sans-serif;`;
                 const progressDialog = document.createElement('div');
-                progressDialog.style.cssText = `background: #23262f; border-radius: 16px; padding: 32px; max-width: 380px; width: 90%; box-shadow: 0 4px 24px rgba(0, 0, 0, 0.3); border: 1px solid #444; text-align: center;`;
+                progressDialog.style.cssText = `background: var(--popup-surface); border-radius: 16px; padding: 32px; max-width: 380px; width: 90%; box-shadow: var(--popup-shadow); border: 1px solid var(--of-border); text-align: center;`;
                 const spinner = document.createElement('div');
-                spinner.style.cssText = `width:56px;height:56px;background:#2ecc71;border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 16px auto;animation:spin 1s linear infinite;box-shadow:0 0 6px #27ae60;`;
+                spinner.style.cssText = `width:56px;height:56px;background:var(--of-accent);border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 16px auto;animation:spin 1s linear infinite;box-shadow:0 0 6px var(--of-accent-glow);`;
                 spinner.innerHTML = '<img src="assets/update.png" alt="updating" style="width:28px;height:28px;object-fit:contain;filter:brightness(10);">';
                 const titleEl = document.createElement('h3');
-                titleEl.style.cssText = 'margin:0 0 10px 0;color:#e5e7eb;font-size:20px;font-weight:bold;';
+                titleEl.style.cssText = 'margin:0 0 10px 0;color:var(--of-text-primary);font-size:20px;font-weight:bold;';
                 titleEl.textContent = '正在更新 yt-dlp';
                 const tipEl = document.createElement('p');
-                tipEl.style.cssText = 'color:#aaa;margin:0 0 12px 0;font-size:14px;';
+                tipEl.style.cssText = 'color:var(--of-text-muted);margin:0 0 12px 0;font-size:14px;';
                 tipEl.id = 'of-update-tip';
                 tipEl.textContent = '正在準備…';
                 const barWrap = document.createElement('div');
-                barWrap.style.cssText = 'height:8px;background:#181a20;border:1px solid #444;border-radius:6px;overflow:hidden;';
+                barWrap.style.cssText = 'height:8px;background:var(--of-bg-elevated);border:1px solid var(--of-border);border-radius:6px;overflow:hidden;';
                 const bar = document.createElement('div');
                 bar.id = 'of-update-bar';
-                bar.style.cssText = 'height:100%;width:0%;background:#27ae60;transition:width .2s ease;';
+                bar.style.cssText = 'height:100%;width:0%;background:var(--of-accent);transition:width .2s ease;';
                 barWrap.appendChild(bar);
                 progressDialog.appendChild(spinner);
                 progressDialog.appendChild(titleEl);
@@ -2515,31 +2517,31 @@ class Api(QObject):
                     overlay.id = 'update-success-overlay';
                     overlay.style.cssText = `position:fixed; inset:0; background:rgba(0,0,0,.7); z-index:10002; display:flex; align-items:center; justify-content:center; font-family:'Segoe UI',Arial,sans-serif;`;
                     const dialog = document.createElement('div');
-                    dialog.style.cssText = `background:#23262f; border-radius:16px; padding:32px; max-width:420px; width:90%; box-shadow:0 4px 24px rgba(0,0,0,.3); border:1px solid #444; text-align:center;`;
+                    dialog.style.cssText = `background:var(--popup-surface); border-radius:16px; padding:32px; max-width:420px; width:90%; box-shadow:var(--popup-shadow); border:1px solid var(--of-border); text-align:center;`;
                     const badge = document.createElement('div');
-                    badge.style.cssText = `width:68px; height:68px; border-radius:50%; margin:0 auto 16px auto; display:flex; align-items:center; justify-content:center; box-shadow:0 0 8px ${success?"#27ae60":"#c0392b"}; background:${success?"#2ecc71":"#e74c3c"}; color:#fff; font-size:28px;`;
+                    badge.style.cssText = `width:68px; height:68px; border-radius:50%; margin:0 auto 16px auto; display:flex; align-items:center; justify-content:center; box-shadow:0 0 8px ${success?"var(--of-accent-glow)":"#c0392b"}; background:${success?"var(--of-accent)":"#e74c3c"}; color:#fff; font-size:28px;`;
                     const img = document.createElement('img');
                     img.alt = success ? 'updated' : 'failed';
                     img.src = success ? 'assets/updated.png' : 'assets/update.png';
                     img.style.cssText = 'width:36px;height:36px;object-fit:contain;filter:brightness(10);';
                     badge.appendChild(img);
                     const title = document.createElement('h3');
-                    title.style.cssText = 'margin:0 0 10px 0; color:#e5e7eb; font-size:20px; font-weight:bold;';
+                    title.style.cssText = 'margin:0 0 10px 0; color:var(--of-text-primary); font-size:20px; font-weight:bold;';
                     title.textContent = success ? '更新完成' : '更新失敗';
                     const text = document.createElement('p');
-                    text.style.cssText = 'color:#aaa; margin:0 0 16px 0; font-size:14px;';
+                    text.style.cssText = 'color:var(--of-text-muted); margin:0 0 16px 0; font-size:14px;';
                     text.textContent = message || (success ? 'yt-dlp 已更新至最新版本。' : '請稍後再試或手動更新。');
                     const hint = document.createElement('p');
-                    hint.style.cssText = 'color:#888; margin:0 0 20px 0; font-size:12px; font-style:italic;';
+                    hint.style.cssText = 'color:var(--of-text-muted); margin:0 0 20px 0; font-size:12px; font-style:italic;';
                     hint.textContent = success ? '更新已完成，為確保生效，建議重新啟動應用程式。' : '';
                     const btnRow = document.createElement('div');
                     btnRow.style.cssText = 'display:flex; justify-content:flex-end; gap:12px;';
                     const laterBtn = document.createElement('button');
                     laterBtn.textContent = success ? '稍後' : '關閉';
-                    laterBtn.style.cssText = 'background:#23262f; color:#e5e7eb; border:1px solid #444; padding:10px 20px; border-radius:8px; cursor:pointer; font-size:14px;';
+                    laterBtn.style.cssText = 'background:var(--of-bg-surface); color:var(--of-text-primary); border:1px solid var(--of-border); padding:10px 20px; border-radius:8px; cursor:pointer; font-size:14px;';
                     laterBtn.onclick = ()=> overlay.remove();
                     btnRow.appendChild(laterBtn);
-                    if (success) { const restartBtn = document.createElement('button'); restartBtn.textContent = '立即重啟'; restartBtn.style.cssText = 'background:#27ae60; color:#fff; border:none; padding:10px 20px; border-radius:8px; cursor:pointer; font-size:14px; font-weight:bold;'; restartBtn.onclick = ()=> { try { window.api.restartApp(); } catch(_){} }; btnRow.appendChild(restartBtn); }
+                    if (success) { const restartBtn = document.createElement('button'); restartBtn.textContent = '立即重啟'; restartBtn.style.cssText = 'background:var(--of-accent-hover); color:#fff; border:none; padding:10px 20px; border-radius:8px; cursor:pointer; font-size:14px; font-weight:bold;'; restartBtn.onclick = ()=> { try { overlay.remove(); window.api.restartApp(); } catch(e){ console.error(e); } }; btnRow.appendChild(restartBtn); }
                     dialog.appendChild(badge); dialog.appendChild(title); dialog.appendChild(text); if (success) dialog.appendChild(hint); dialog.appendChild(btnRow);
                     overlay.appendChild(dialog); document.body.appendChild(overlay);
                 };
@@ -2561,46 +2563,46 @@ class Api(QObject):
                 overlay.style.cssText = `position: fixed; top:0; left:0; width:100%; height:100%; background: rgba(0, 0, 0, 0.7); z-index: 10000; display: flex; align-items: center; justify-content: center; font-family: 'Segoe UI', Arial, sans-serif;`;
                 const dialog = document.createElement('div');
                 dialog.id = 'update-dialog';
-                dialog.style.cssText = `background: #23262f; border-radius: 16px; padding: 32px; max-width: 420px; width: 90%; box-shadow: 0 4px 24px rgba(0, 0, 0, 0.3); border: 1px solid #444;`;
+                dialog.style.cssText = `background: var(--popup-surface); border-radius: 16px; padding: 32px; max-width: 420px; width: 90%; box-shadow: var(--popup-shadow); border: 1px solid var(--of-border);`;
                 const titleDiv = document.createElement('div');
                 titleDiv.style.cssText = `display: flex; align-items: center; margin-bottom: 16px;`;
                 const iconDiv = document.createElement('div');
-                iconDiv.style.cssText = `width: 48px; height: 48px; background: #2ecc71; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin-right: 16px; box-shadow: 0 0 6px #27ae60;`;
+                iconDiv.style.cssText = `width: 48px; height: 48px; background: var(--of-accent); border-radius: 50%; display: flex; align-items: center; justify-content: center; margin-right: 16px; box-shadow: 0 0 6px var(--of-accent-glow);`;
                 iconDiv.innerHTML = '<img src="assets/update.png" alt="update" style="width:24px;height:24px;object-fit:contain;filter:brightness(1);">';
                 const title = document.createElement('h3');
-                title.style.cssText = `margin: 0; color: #e5e7eb; font-size: 20px; font-weight: bold;`;
+                title.style.cssText = `margin: 0; color: var(--of-text-primary); font-size: 20px; font-weight: bold;`;
                 title.textContent = '發現 yt-dlp 新版本';
                 titleDiv.appendChild(iconDiv); titleDiv.appendChild(title);
                 const versionDiv = document.createElement('div');
-                versionDiv.style.cssText = `background: #181a20; border-radius: 12px; padding: 18px; margin-bottom: 24px; border: 1px solid #444;`;
+                versionDiv.style.cssText = `background: var(--of-bg-elevated); border-radius: 12px; padding: 18px; margin-bottom: 24px; border: 1px solid var(--of-border);`;
                 const currentVersionDiv = document.createElement('div');
                 currentVersionDiv.style.cssText = 'margin-bottom: 12px;';
-                currentVersionDiv.innerHTML = `<span style=\"color: #aaa; font-size: 15px;\">目前版本:</span> <span style=\"color: #e5e7eb; font-weight: 500; margin-left: 12px;\">__CURR__</span>`;
+                currentVersionDiv.innerHTML = `<span style=\"color: var(--of-text-muted); font-size: 15px;\">目前版本:</span> <span style=\"color: var(--of-text-primary); font-weight: 500; margin-left: 12px;\">__CURR__</span>`;
                 const latestVersionDiv = document.createElement('div');
-                latestVersionDiv.innerHTML = `<span style=\"color: #aaa; font-size: 15px;\">最新版本:</span> <span style=\"color: #2ecc71; font-weight: 500; margin-left: 12px;\">__LATEST__</span>`;
+                latestVersionDiv.innerHTML = `<span style=\"color: var(--of-text-muted); font-size: 15px;\">最新版本:</span> <span style=\"color: var(--of-accent); font-weight: 500; margin-left: 12px;\">__LATEST__</span>`;
                 versionDiv.appendChild(currentVersionDiv); versionDiv.appendChild(latestVersionDiv);
                 const question = document.createElement('p');
-                question.style.cssText = `color: #e5e7eb; margin: 16px 0 8px 0; font-size: 15px; font-weight: 600;`;
+                question.style.cssText = `color: var(--of-text-primary); margin: 16px 0 8px 0; font-size: 15px; font-weight: 600;`;
                 question.textContent = '是否要更新到最新版本？';
                 const actionsRow = document.createElement('div');
                 actionsRow.style.cssText = `display: flex; align-items: center; justify-content: flex-start; gap: 16px; margin: 0 0 8px 0;`;
                 const note = document.createElement('p');
-                note.style.cssText = `color: #888; margin: 0; font-size: 12px; line-height: 1.4; font-style: italic; flex: 1;`;
+                note.style.cssText = `color: var(--of-text-muted); margin: 0; font-size: 12px; line-height: 1.4; font-style: italic; flex: 1;`;
                 note.textContent = '※yt-dlp為下載器的重要核心元件，建議更新以避免錯誤及獲得更好的使用體驗';
                 const buttonDiv = document.createElement('div');
                 buttonDiv.style.cssText = `display: flex; gap: 16px; justify-content: flex-end; margin: 0 0 24px 0;`;
                 const skipBtn = document.createElement('button');
                 skipBtn.id = 'skip-update-btn';
-                skipBtn.style.cssText = `background: #23262f; color: #e5e7eb; border: 1px solid #444; padding: 12px 24px; border-radius: 8px; cursor: pointer; font-size: 15px; font-weight: 500; transition: all 0.2s ease;`;
+                skipBtn.style.cssText = `background: var(--of-bg-surface); color: var(--of-text-primary); border: 1px solid var(--of-border); padding: 12px 24px; border-radius: 8px; cursor: pointer; font-size: 15px; font-weight: 500; transition: all 0.2s ease;`;
                 skipBtn.textContent = '稍後提醒';
-                skipBtn.onmouseover = function(){ this.style.background = '#2b2e37'; this.style.borderColor = '#2ecc71'; };
-                skipBtn.onmouseout = function(){ this.style.background = '#23262f'; this.style.borderColor = '#444'; };
+                skipBtn.onmouseover = function(){ this.style.background = 'var(--of-bg-hover)'; this.style.borderColor = 'var(--of-accent)'; };
+                skipBtn.onmouseout = function(){ this.style.background = 'var(--of-bg-surface)'; this.style.borderColor = 'var(--of-border)'; };
                 const updateBtn = document.createElement('button');
                 updateBtn.id = 'update-now-btn';
-                updateBtn.style.cssText = `background: #27ae60; color: white; border: none; padding: 12px 24px; border-radius: 8px; cursor: pointer; font-size: 15px; font-weight: bold; transition: all 0.2s ease; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);`;
+                updateBtn.style.cssText = `background: var(--of-accent-hover); color: white; border: none; padding: 12px 24px; border-radius: 8px; cursor: pointer; font-size: 15px; font-weight: bold; transition: all 0.2s ease; box-shadow: var(--of-shadow-sm);`;
                 updateBtn.textContent = '立即更新';
-                updateBtn.onmouseover = function(){ this.style.background = '#219150'; this.style.transform = 'scale(1.03)'; this.style.boxShadow = '0 4px 12px rgba(0, 0, 0, 0.3)'; };
-                updateBtn.onmouseout = function(){ this.style.background = '#27ae60'; this.style.transform = 'scale(1)'; this.style.boxShadow = '0 2px 8px rgba(0, 0, 0, 0.2)'; };
+                updateBtn.onmouseover = function(){ this.style.background = 'var(--of-accent)'; this.style.transform = 'scale(1.03)'; };
+                updateBtn.onmouseout = function(){ this.style.background = 'var(--of-accent-hover)'; this.style.transform = 'scale(1)'; };
                 buttonDiv.appendChild(skipBtn); buttonDiv.appendChild(updateBtn);
                 actionsRow.appendChild(note);
                 dialog.appendChild(titleDiv); dialog.appendChild(versionDiv); dialog.appendChild(question); dialog.appendChild(actionsRow); dialog.appendChild(buttonDiv);

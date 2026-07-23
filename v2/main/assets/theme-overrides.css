@@ -1,0 +1,18 @@
+/**
+ * Theme Overrides CSS
+ * This file is loaded last and can override individual page styles
+ * Use this to apply theme-specific customizations that should take precedence
+ */
+
+/* Example: Override specific page styles based on theme */
+/* [data-theme="dark"] .queue-item { */
+/*     background: #1a1a1a; */
+/* } */
+
+/* [data-theme="light"] .settings-section { */
+/*     background: #ffffff; */
+/* } */
+
+/* [data-accent="green"] .queue-item.completed { */
+/*     border-color: #2ecc71; */
+/* } */

@@ -1,0 +1,102 @@
+<div class="settings-page" id="settings-page">
+    <div class="settings-container">
+        <h2 class="settings-page-title">設定</h2>
+
+        <div class="settings-section">
+            <h3 class="settings-section-title">通知設定</h3>
+            <div class="settings-item">
+                <label class="settings-checkbox-label">
+                    <input type="checkbox" id="enable-notifications" class="settings-checkbox">
+                    <span style="margin-left: 8px;">啟用下載完成通知(實驗性)</span>
+                </label>
+            </div>
+            <div class="settings-item" style="margin-top: 16px;">
+                <label class="settings-label-block">
+                    播放清單下載完成的通知時機：
+                </label>
+                <div style="display: flex; flex-direction: column; gap: 8px; width: 100%; box-sizing: border-box;">
+                    <label class="settings-checkbox-label">
+                        <input type="radio" name="playlist-notification-mode" id="playlist-notify-complete" value="complete" class="settings-radio" style="margin-right: 8px;">
+                        <span>整個播放清單下載完成時</span>
+                    </label>
+                    <label class="settings-checkbox-label">
+                        <input type="radio" name="playlist-notification-mode" id="playlist-notify-each" value="each" class="settings-radio" style="margin-right: 8px;">
+                        <span>每下載完一部影片時</span>
+                    </label>
+                </div>
+            </div>
+        </div>
+
+        <div class="settings-section">
+            <h3 class="settings-section-title">下載設定</h3>
+            <div class="settings-item">
+                <label class="settings-checkbox-label">
+                    <input type="checkbox" id="add-resolution-to-filename" class="settings-checkbox">
+                    <span style="margin-left: 8px;">在檔名後方加上影片格式</span>
+                </label>
+            </div>
+            <div class="settings-item">
+                <label class="settings-label-block">
+                    同時下載影片數量上限（建議 3~5）：
+                </label>
+                <input type="number" id="max-concurrent-downloads" class="settings-input"
+                       min="1" step="1"
+                       style="width: 140px;">
+            </div>
+            <div class="settings-item">
+                <label class="settings-label-block">
+                    自訂下載路徑：
+                </label>
+                <div style="display: flex; gap: 12px; align-items: center; flex-wrap: wrap;">
+                    <input type="text" id="custom-download-path" class="settings-input"
+                           placeholder="請輸入下載路徑..."
+                           style="flex: 1; min-width: 200px;">
+                    <button type="button" id="browse-download-path" class="settings-btn-secondary"
+                            style="padding: 10px 22px; min-width: 96px; white-space: nowrap;">
+                        瀏覽
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <div class="settings-section">
+            <h3 class="settings-section-title">外觀 (實驗性)</h3>
+            <div class="settings-item">
+                <label class="settings-label-block">強調色</label>
+                <div class="accent-picker" id="accent-picker" role="radiogroup" aria-label="強調色">
+                    <button type="button" class="accent-swatch" data-accent="green" aria-pressed="false" title="綠色">
+                        <span class="accent-swatch-dot" style="--swatch-color: #2ecc71;"></span>
+                        <span class="accent-swatch-label">綠色</span>
+                    </button>
+                    <button type="button" class="accent-swatch selected" data-accent="blue" aria-pressed="true" title="藍色">
+                        <span class="accent-swatch-dot" style="--swatch-color: #3498db;"></span>
+                        <span class="accent-swatch-label">藍色</span>
+                    </button>
+                    <button type="button" class="accent-swatch" data-accent="purple" aria-pressed="false" title="紫色">
+                        <span class="accent-swatch-dot" style="--swatch-color: #9b59b6;"></span>
+                        <span class="accent-swatch-label">紫色</span>
+                    </button>
+                    <button type="button" class="accent-swatch" data-accent="orange" aria-pressed="false" title="橙色">
+                        <span class="accent-swatch-dot" style="--swatch-color: #e67e22;"></span>
+                        <span class="accent-swatch-label">橙色</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <div class="settings-section">
+            <h3 class="settings-section-title">開發者選項</h3>
+            <div class="settings-item">
+                <label class="settings-checkbox-label">
+                    <input type="checkbox" id="enable-dev-commands" class="settings-checkbox">
+                    <span style="margin-left: 8px;">啟用 Dev Command（開發/測試用）</span>
+                </label>
+            </div>
+        </div>
+
+        <div class="settings-reset-section">
+            <button class="settings-btn-secondary settings-reset-btn" onclick="resetSettings()">重設為預設值</button>
+        </div>
+
+    </div>
+</div>

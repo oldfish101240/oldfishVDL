@@ -4,8 +4,8 @@
   "enableDevCommands": true,
   "enableNotifications": true,
   "hideDevCommandEnableWarning": false,
-  "lightMode": false,
   "maxConcurrentDownloads": 3,
   "playlistNotificationMode": "complete",
-  "themeColor": "#3498db"
+  "themeAccent": "green",
+  "themeMode": "dark"
 }

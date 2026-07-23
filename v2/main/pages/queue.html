@@ -1,0 +1,14 @@
+<div class="queue-page" id="queue-page">
+    <div class="queue-list" id="queue-list">
+        <!-- 影片任務將會動態新增到這裡 -->
+    </div>
+</div>
+<div class="queue-bottom">
+    <div class="queue-search-row" id="queue-search-row">
+        <div class="dev-cmd-input-shell dev-cmd-input-shell--queue" data-dev-cmd-shell>
+            <input class="search-input" id="queue-video-url" type="text" placeholder="請輸入影片網址..." autocomplete="off" spellcheck="false">
+            <div class="dev-cmd-suggest-list" role="listbox" aria-label="Dev command 候選"></div>
+        </div>
+        <button class="download-btn" onclick="downloadVideoFromQueue()">下載</button>
+    </div>
+</div>

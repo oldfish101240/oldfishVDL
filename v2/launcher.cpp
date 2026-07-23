@@ -129,7 +129,29 @@ int is_running_as_admin() {
     return is_admin ? 1 : 0;
 }
 
-int ensure_single_instance() {
+int ensure_single_instance(const wchar_t* cmd_line) {
+    int is_restart = contains_flag_w(cmd_line, L"--restart");
+
+    if (is_restart) {
+        log_message("INFO", "restart mode: waiting for previous instance to exit");
+        for (int attempt = 0; attempt < 30; attempt++) {
+            g_singleton_mutex = CreateMutexW(NULL, FALSE, MUTEX_NAME);
+            if (!g_singleton_mutex) {
+                return 0;
+            }
+            if (GetLastError() != ERROR_ALREADY_EXISTS) {
+                log_message("INFO", "restart mode: acquired singleton mutex");
+                return 1;
+            }
+            CloseHandle(g_singleton_mutex);
+            g_singleton_mutex = NULL;
+            Sleep(500);
+        }
+        show_info(L"無法完成重啟，請稍後再試或手動啟動程式。");
+        log_message("WARN", "restart mode: timed out waiting for singleton mutex");
+        return 0;
+    }
+
     g_singleton_mutex = CreateMutexW(NULL, FALSE, MUTEX_NAME);
     if (!g_singleton_mutex) {
         return 0;
@@ -227,6 +249,32 @@ int maybe_relaunch_as_admin(const wchar_t* cmd_line) {
     return 1;
 }
 
+void filter_internal_launcher_args(const char* src, char* dest, size_t dest_size) {
+    char buffer[1024];
+    char* token = NULL;
+    char* context = NULL;
+
+    if (!dest || dest_size == 0) {
+        return;
+    }
+    dest[0] = '\0';
+    if (!src || src[0] == '\0') {
+        return;
+    }
+
+    strncpy_s(buffer, sizeof(buffer), src, _TRUNCATE);
+    token = strtok_s(buffer, " \t", &context);
+    while (token) {
+        if (strcmp(token, "--restart") != 0) {
+            if (dest[0] != '\0') {
+                strncat_s(dest, dest_size, " ", _TRUNCATE);
+            }
+            strncat_s(dest, dest_size, token, _TRUNCATE);
+        }
+        token = strtok_s(NULL, " \t", &context);
+    }
+}
+
 int check_critical_paths(const char* pythonw_path, const char* script_path) {
     if (!file_exists(pythonw_path)) {
         char error_msg[1024];
@@ -274,7 +322,7 @@ int APIENTRY wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmd
     init_log_file(app_path);
     log_message("INFO", "app path=%s", app_path);
 
-    if (!ensure_single_instance()) {
+    if (!ensure_single_instance(lpCmdLine)) {
         log_message("INFO", "blocked by singleton mutex");
         close_log_file();
         release_singleton();
@@ -320,6 +368,12 @@ int APIENTRY wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmd
             release_singleton();
             return 1;
         }
+    }
+
+    {
+        char filtered_args[1024] = {0};
+        filter_internal_launcher_args(forwarded_args, filtered_args, sizeof(filtered_args));
+        strncpy_s(forwarded_args, sizeof(forwarded_args), filtered_args, _TRUNCATE);
     }
 
     if (forwarded_args[0] != '\0') {

@@ -12,3 +12,5 @@ thumb_cache/
 test_format_system.py
 python_embed/
 ffmpeg-7.1.1-essentials_build/
+.vscode/
+launcher.log

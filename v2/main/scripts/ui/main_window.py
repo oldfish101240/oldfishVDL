@@ -4,6 +4,7 @@
 主視窗模組
 """
 
+import json
 import os
 import sys
 
@@ -16,20 +17,62 @@ if root_dir not in sys.path:
 
 from PySide6.QtWidgets import QApplication, QMainWindow, QSystemTrayIcon, QStyle, QMessageBox
 from PySide6.QtWebEngineWidgets import QWebEngineView
+from PySide6.QtWebEngineCore import QWebEngineScript
 from PySide6.QtWebChannel import QWebChannel
 from PySide6.QtCore import QUrl, QSettings, Qt
 from PySide6.QtGui import QIcon
 from scripts.core.api import Api
-from scripts.config.constants import (
-    APP_NAME,
-    WINDOW_WIDTH,
-    WINDOW_HEIGHT,
-    WINDOW_MIN_WIDTH,
-    WINDOW_MIN_HEIGHT,
-)
+from scripts.config.constants import APP_NAME, WINDOW_WIDTH, WINDOW_HEIGHT, WINDOW_MIN_WIDTH, WINDOW_MIN_HEIGHT
 from scripts.utils.logger import main_window_console, LogLevel
 from scripts.utils.file_utils import safe_path_join, get_assets_path
-from scripts.ui.html_content import get_html_content
+from scripts.config.settings import SettingsManager
+
+def _resolve_html_theme_attrs(settings):
+    """依設定解析 data-theme（不含 system 動態解析，僅啟動 FOUC 用）。"""
+    mode = settings.get('themeMode', 'dark') or 'dark'
+    accent = settings.get('themeAccent', 'blue') or 'blue'
+    valid_modes = ('dark', 'system')
+    valid_accents = ('green', 'blue', 'purple', 'orange')
+    if mode not in valid_modes:
+        mode = 'dark'
+    if accent not in valid_accents:
+        accent = 'blue'
+    resolved = 'dark'
+    if mode == 'system':
+        resolved = 'dark'
+    return resolved, accent, mode
+
+def _create_initial_theme_script(resolved_theme, accent, theme_mode):
+    """在文件建立時套用主題，讓本機 HTML 載入時不出現主題閃爍。"""
+    values = json.dumps({
+        'theme': resolved_theme,
+        'accent': accent,
+        'themeMode': theme_mode,
+    }, ensure_ascii=False)
+    source = f"""
+        (() => {{
+            const values = {values};
+            const applyTheme = () => {{
+                const root = document.documentElement;
+                if (!root) return;
+                root.dataset.theme = values.theme;
+                root.dataset.accent = values.accent;
+                root.dataset.themeMode = values.themeMode;
+                if (document.body) {{
+                    document.body.classList.toggle('light-theme', values.theme === 'light');
+                }}
+            }};
+            applyTheme();
+            document.addEventListener('DOMContentLoaded', applyTheme, {{ once: true }});
+        }})();
+    """
+    script = QWebEngineScript()
+    script.setName('oldfish-initial-theme')
+    script.setSourceCode(source)
+    script.setInjectionPoint(QWebEngineScript.InjectionPoint.DocumentCreation)
+    script.setWorldId(QWebEngineScript.ScriptWorldId.MainWorld)
+    script.setRunsOnSubFrames(False)
+    return script
 
 class MainWindow(QMainWindow):
     """主視窗類別"""
@@ -47,11 +90,6 @@ class MainWindow(QMainWindow):
         self.setMinimumSize(WINDOW_MIN_WIDTH, WINDOW_MIN_HEIGHT)
         self.resize(WINDOW_WIDTH, WINDOW_HEIGHT)
         self._restore_window_geometry()
-        if self.width() < WINDOW_MIN_WIDTH or self.height() < WINDOW_MIN_HEIGHT:
-            self.resize(
-                max(self.width(), WINDOW_MIN_WIDTH),
-                max(self.height(), WINDOW_MIN_HEIGHT),
-            )
         
         # 設定視窗圖示
         icon_path = safe_path_join(get_assets_path(self.root_dir), 'icon.ico')
@@ -63,7 +101,7 @@ class MainWindow(QMainWindow):
         
         # 創建 WebEngineView
         self.web_view = QWebEngineView()
-        # 關閉 Qt/PySide6 內建右鍵選單，改由前端自訂選單處理
+        # 關閉 Qt 內建右鍵選單，改由前端自訂選單處理
         self.web_view.setContextMenuPolicy(Qt.ContextMenuPolicy.NoContextMenu)
         self.setCentralWidget(self.web_view)
         
@@ -94,29 +132,43 @@ class MainWindow(QMainWindow):
         # 將 WebChannel 注入到 WebEngineView
         self.web_view.page().setWebChannel(self.web_channel)
         
-        # 載入 HTML 內容
-        self.load_html_content()
-        
         # 連接信號
         self.api_instance.infoReady.connect(self.on_info_ready)
         self.api_instance.infoError.connect(self.on_info_error)
+
+        # 先連接載入完成事件，再開始載入頁面，避免快速載入時遺漏初始化。
+        self.web_view.loadFinished.connect(self.on_load_finished)
+
+        # 載入唯一的前端入口。
+        self.load_frontend()
         
         # 啟動背景版本檢查
         self.start_background_version_check()
     
-    def load_html_content(self):
-        """載入 HTML 內容"""
+    def load_frontend(self):
+        """從 main.html 載入前端，讓 HTML、CSS、JS 都以檔案形式維護。"""
         try:
-            # 使用 html_content.py 中的邏輯
-            html_str = get_html_content()
-            main_window_console(f"載入 HTML 內容，長度: {len(html_str)}", level=LogLevel.INFO)
-            
-            # 設定基礎 URL
-            base_url = QUrl.fromLocalFile(self.root_dir + os.sep)
-            self.web_view.setHtml(html_str, base_url)
-            
-            # 頁面載入完成後執行初始化
-            self.web_view.loadFinished.connect(self.on_load_finished)
+            try:
+                settings = SettingsManager(self.root_dir).load_settings()
+                resolved, accent, theme_mode = _resolve_html_theme_attrs(settings)
+            except Exception as e:
+                main_window_console(f"讀取主題設定失敗，使用預設: {e}", level=LogLevel.WARNING)
+                resolved, accent, theme_mode = 'dark', 'blue', 'dark'
+
+            scripts = self.web_view.page().scripts()
+            # PySide6 的 QWebEngineScriptCollection 使用 find()，會回傳
+            # 同名腳本的清單；findScripts() 並不是這個版本的 API。
+            # 移除既有腳本，避免重新載入時重複注入。
+            for old_script in scripts.find('oldfish-initial-theme'):
+                scripts.remove(old_script)
+            scripts.insert(_create_initial_theme_script(resolved, accent, theme_mode))
+
+            html_path = safe_path_join(self.root_dir, 'main.html')
+            if not os.path.isfile(html_path):
+                raise FileNotFoundError(f"找不到前端入口：{html_path}")
+
+            main_window_console(f"載入前端入口：{html_path}", level=LogLevel.INFO)
+            self.web_view.load(QUrl.fromLocalFile(html_path))
             
         except Exception as e:
             main_window_console(f"載入 HTML 內容失敗: {e}", level=LogLevel.ERROR)
@@ -179,8 +231,7 @@ class MainWindow(QMainWindow):
                     var st = document.createElement('style');
                     st.id = styleId;
                     st.textContent = 
-                        ".version-tag{{position:absolute;left:12px;bottom:8px;font-size:12px;color:#888;user-select:none;pointer-events:none;}}" +
-                        "body.light-theme .version-tag{{color:#666;}}";
+                        ".version-tag{{position:absolute;left:12px;bottom:8px;font-size:12px;color:var(--of-version-tag,#888);user-select:none;pointer-events:none;}}";
                     document.head.appendChild(st);
                 }}
 
@@ -199,8 +250,9 @@ class MainWindow(QMainWindow):
                 // 依目前選單狀態設定初始顯示
                 var vt = document.getElementById('version-tag');
                 if (vt) {{
-                    var homeCenter = document.getElementById('home-center');
-                    var visible = homeCenter && homeCenter.style.display !== 'none';
+                    var titleImg = document.getElementById('title-img');
+                    var searchRow = document.getElementById('search-row');
+                    var visible = (titleImg && titleImg.style.display !== 'none') || (searchRow && searchRow.style.display !== 'none');
                     vt.style.display = visible ? 'block' : 'none';
                 }}
 
@@ -212,8 +264,9 @@ class MainWindow(QMainWindow):
                         try {{ _orig(p); }} finally {{
                             var vt2 = document.getElementById('version-tag');
                             if (vt2) {{
-                                var homeCenter2 = document.getElementById('home-center');
-                                var visible2 = (p === 'home') || (homeCenter2 && homeCenter2.style.display !== 'none');
+                                var titleImg2 = document.getElementById('title-img');
+                                var searchRow2 = document.getElementById('search-row');
+                                var visible2 = (p === 'home') || (titleImg2 && titleImg2.style.display !== 'none') || (searchRow2 && searchRow2.style.display !== 'none');
                                 vt2.style.display = visible2 ? 'block' : 'none';
                             }}
                         }}
@@ -391,7 +444,11 @@ class MainWindow(QMainWindow):
     def closeEvent(self, event):
         """視窗關閉事件"""
         try:
-            if self.api_instance and self.api_instance.is_ytdlp_update_in_progress():
+            if (
+                self.api_instance
+                and self.api_instance.is_ytdlp_update_in_progress()
+                and not self.api_instance.is_restarting()
+            ):
                 QMessageBox.warning(
                     self,
                     "更新進行中",
@@ -415,5 +472,3 @@ def create_app(root_dir):
     window = MainWindow(root_dir)
     window.show()
     return app, window
-
-

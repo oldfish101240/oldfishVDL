@@ -29,6 +29,7 @@ def parse_launcher_args():
     parser.add_argument("--no-gpu", action="store_true")
     parser.add_argument("--require-admin", action="store_true")
     parser.add_argument("--launcher-elevated", action="store_true")
+    parser.add_argument("--restart", action="store_true")
     args, _ = parser.parse_known_args()
     return args
 

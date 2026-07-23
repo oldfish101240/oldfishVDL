@@ -5,7 +5,7 @@
 (function (global) {
     'use strict';
 
-    const DEFAULT = '#2ecc71';
+    const DEFAULT = '#3498db';
     const PRESETS = [
         { id: 'green', label: '綠色', color: '#2ecc71' },
         { id: 'blue', label: '藍色', color: '#3498db' },

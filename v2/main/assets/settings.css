@@ -1,0 +1,236 @@
+/* Settings Page Styles */
+
+.settings-page {
+    width: 100%;
+    margin: 20px auto 0;
+    padding: 0 20px;
+    position: relative;
+    overflow-x: hidden;
+    box-sizing: border-box;
+    padding-bottom: 100px;
+    flex: 1;
+    overflow-y: auto;
+}
+
+@media (max-width: 500px) {
+    .settings-page {
+        padding: 0 10px;
+        padding-bottom: 100px;
+    }
+}
+
+.settings-container {
+    padding: 20px;
+    padding-bottom: 20px;
+    position: relative;
+    overflow-x: hidden;
+    box-sizing: border-box;
+    width: 100%;
+    max-width: 100%;
+    display: flex;
+    flex-direction: column;
+}
+
+@media (max-width: 600px) {
+    .settings-container {
+        padding: 15px;
+    }
+}
+
+@media (max-width: 400px) {
+    .settings-container {
+        padding: 10px;
+    }
+}
+
+.settings-section {
+    margin-bottom: 16px;
+    padding: 20px;
+    background: var(--of-bg-hover);
+    border-radius: 12px;
+    border: none;
+    box-shadow: none;
+    box-sizing: border-box;
+    width: 100%;
+    max-width: 100%;
+    overflow: hidden;
+}
+
+@media (max-width: 500px) {
+    .settings-section {
+        padding: 15px;
+    }
+}
+
+.settings-section:last-child {
+    margin-bottom: 0;
+}
+
+.settings-section-title {
+    font-size: 20px;
+    color: var(--of-accent);
+    margin: 0 0 20px 0;
+    font-weight: 600;
+}
+
+.settings-item {
+    margin-bottom: 15px;
+}
+
+.settings-item:last-child {
+    margin-bottom: 0;
+}
+
+.settings-label-block {
+    display: block;
+    font-size: 14px;
+    color: var(--of-text-primary);
+    margin-bottom: 8px;
+    font-weight: 500;
+}
+
+.settings-checkbox-label {
+    display: flex;
+    align-items: center;
+    cursor: pointer;
+    user-select: none;
+}
+
+.settings-checkbox {
+    width: 18px;
+    height: 18px;
+    accent-color: var(--of-accent);
+    cursor: pointer;
+}
+
+.settings-radio {
+    width: 18px;
+    height: 18px;
+    accent-color: var(--of-accent);
+    cursor: pointer;
+}
+
+.settings-input {
+    width: 100%;
+    padding: 10px 12px;
+    border: 1px solid var(--of-border);
+    border-radius: 8px;
+    background: var(--of-bg-elevated);
+    color: var(--of-text-primary);
+    font-size: 14px;
+    transition: border-color 0.2s ease;
+    box-sizing: border-box;
+    overflow-x: auto;
+    white-space: nowrap;
+}
+
+.settings-input:focus {
+    outline: none;
+    border-color: var(--of-accent);
+}
+
+.settings-input:read-only {
+    cursor: pointer;
+}
+
+.settings-btn-secondary {
+    background: transparent;
+    color: var(--of-accent-text);
+    border: 1px solid var(--of-accent-outline);
+    border-radius: 8px;
+    padding: 10px 20px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.settings-btn-secondary:hover {
+    background: var(--of-accent-hover-bg);
+    border-color: var(--of-accent);
+}
+
+.settings-reset-section {
+    margin-top: 40px;
+    text-align: center;
+    padding-top: 20px;
+    border-top: 1px solid var(--of-border);
+}
+
+.settings-reset-btn {
+    padding: 12px 32px;
+    font-size: 15px;
+}
+
+/* Theme mode picker */
+.theme-mode-picker {
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+}
+
+.theme-mode-card {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 12px;
+    border: 2px solid var(--of-border);
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    background: var(--of-bg-surface);
+}
+
+.theme-mode-card:hover {
+    border-color: var(--of-accent-outline);
+}
+
+.theme-mode-card.selected {
+    border-color: var(--of-accent);
+    box-shadow: 0 0 0 3px var(--of-accent-soft);
+}
+
+.theme-mode-card-label {
+    font-size: 13px;
+    color: var(--of-text-primary);
+}
+
+/* Accent picker */
+.accent-picker {
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+}
+
+.accent-swatch {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 12px;
+    border: 2px solid var(--of-border);
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    background: var(--of-bg-surface);
+}
+
+.accent-swatch:hover {
+    border-color: var(--of-accent-outline);
+}
+
+.accent-swatch.selected {
+    border-color: var(--of-accent);
+    box-shadow: 0 0 0 3px var(--of-accent-soft);
+}
+
+.accent-swatch-dot {
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    background-color: var(--swatch-color);
+}
+
+.accent-swatch-label {
+    font-size: 13px;
+    color: var(--of-text-primary);
+}

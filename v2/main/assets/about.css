@@ -1,0 +1,49 @@
+/* About Page Styles */
+
+.title-brand--about {
+    margin-top: 0;
+    margin-bottom: 16px;
+    max-width: 420px;
+}
+
+.about-card {
+    background: var(--of-bg-hover);
+    border: none;
+    border-radius: 12px;
+    padding: 24px;
+    box-shadow: none;
+}
+
+.about-content {
+    text-align: center;
+    color: var(--of-text-primary);
+}
+
+.about-version {
+    font-size: 18px;
+    font-weight: 600;
+    color: var(--of-accent);
+    margin: 20px 0;
+}
+
+.about-author {
+    font-size: 14px;
+    color: var(--of-text-secondary);
+    margin: 10px 0;
+}
+
+.about-link {
+    display: inline-block;
+    margin-top: 20px;
+    padding: 10px 20px;
+    background: var(--of-accent);
+    color: white;
+    text-decoration: none;
+    border-radius: 8px;
+    font-weight: 600;
+    transition: background 0.2s ease;
+}
+
+.about-link:hover {
+    background: var(--of-accent-hover);
+}
