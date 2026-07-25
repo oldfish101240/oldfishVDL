@@ -1,0 +1,423 @@
+<!DOCTYPE html>
+<html lang="zh-tw" data-theme="dark" data-accent="blue" data-theme-mode="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>oldfish影片下載器</title>
+    <link rel="stylesheet" href="styles/themes/themes.css">
+    <link rel="stylesheet" href="styles/pages/home.css">
+    <link rel="stylesheet" href="styles/pages/queue.css">
+    <link rel="stylesheet" href="styles/pages/settings.css">
+    <link rel="stylesheet" href="styles/pages/about.css">
+    <link rel="stylesheet" href="styles/themes/theme-overrides.css">
+    <link rel="stylesheet" href="styles/base/main.css">
+    <script src="qrc:///qtwebchannel/qwebchannel.js"></script>
+    <script src="scripts/core/utils.js"></script>
+    <script src="scripts/features/theme-manager.js"></script>
+    <script src="scripts/features/update-dialog.js"></script>
+    <script src="scripts/components/modal-manager.js"></script>
+    <script src="scripts/components/select-dropdown.js"></script>
+    <script src="scripts/core/app.js"></script>
+    <script src="scripts/features/queue-manager.js"></script>
+    <script src="scripts/features/playlist-manager.js"></script>
+    <script src="scripts/components/video-modal.js"></script>
+    <script>
+        // 初始化 Qt WebChannel 並建立與後端的橋接，提供 window.pywebview.api 相容層
+        (function(){
+            function initChannel(){
+                if (typeof QWebChannel === 'undefined' || !window.qt || !qt.webChannelTransport){
+                    // 若尚未就緒，稍後重試
+                    return setTimeout(initChannel, 50);
+                }
+                new QWebChannel(qt.webChannelTransport, function(channel){
+                    window.api = channel.objects.api;
+                    window.pywebview = { api: window.api };
+                    
+                    // 初始化回調管理器
+                    console.log('[前端] 初始化回調管理器');
+                    window.__videoInfoCallback = null;
+                    window.__videoInfoErrorCallback = null;
+                    
+                    // 設置全局回調，作為後備處理
+                    window.__onVideoInfo = function(info) {
+                        console.log('[前端] __onVideoInfo 被調用', info);
+                        console.log('[前端] 當前回調函數:', window.__videoInfoCallback ? '已設置' : '未設置');
+                        
+                        if (window.__videoInfoCallback && typeof window.__videoInfoCallback === 'function') {
+                            console.log('[前端] 使用專用回調處理');
+                            try {
+                                window.__videoInfoCallback(info);
+                            } catch (e) {
+                                console.error('[前端] 專用回調執行出錯:', e);
+                            }
+                        } else {
+                            console.warn('[前端] 沒有專用回調，使用默認處理');
+                            // 如果沒有專用回調，嘗試根據資訊類型處理
+                            if (info && info.is_playlist) {
+                                console.log('[前端] 檢測到播放清單資訊，但沒有專用回調');
+                            }
+                        }
+                    };
+                    
+                    window.__onVideoInfoError = function(error) {
+                        console.error('[前端] __onVideoInfoError 被調用:', error);
+                        if (window.__videoInfoErrorCallback && typeof window.__videoInfoErrorCallback === 'function') {
+                            try {
+                                window.__videoInfoErrorCallback(error);
+                            } catch (e) {
+                                console.error('[前端] 錯誤回調執行出錯:', e);
+                            }
+                        }
+                    };
+                    
+                    console.log('[前端] 回調管理器初始化完成');
+                    
+                    // Initialize theme after API is ready
+                    ThemeManager.loadThemeFromApi();
+                });
+            }
+            initChannel();
+        })();
+    </script>
+</head>
+<body>
+    <div id="toast-container" aria-live="polite" aria-atomic="true"></div>
+    <div id="custom-context-menu" class="custom-context-menu" role="menu" aria-hidden="true"></div>
+    <div class="container">
+        <div class="sidebar" id="sidebar">
+            <div class="menu-btn" onclick="toggleSidebar()">
+                <img src="assets/menu.png" alt="menu" style="width:32px;height:32px;">
+            </div>
+            <div class="nav-item selected" id="nav-home" onclick="showPage('home')">
+                <img src="assets/home.png" alt="主頁">
+                <span class="nav-text">主頁</span>
+            </div>
+            <div class="nav-item" id="nav-queue" onclick="showPage('queue')">
+                <img src="assets/quene.png" alt="佇列">
+                <span class="nav-text">佇列</span>
+            </div>
+            <!-- 將以下兩個按鈕固定在側邊欄底部 -->
+            <div style="flex:1"></div>
+            <div class="nav-item" id="nav-settings" onclick="showPage('settings')">
+                <img src="assets/settings.png" alt="設定">
+                <span class="nav-text">設定</span>
+            </div>
+            <div class="nav-item" id="nav-about" onclick="showPage('about')">
+                <img src="assets/about.png" alt="關於">
+                <span class="nav-text">關於</span>
+            </div>
+        </div>
+        <div class="main">
+            <!-- 動態內容容器 -->
+            <div id="page-content" class="page-content">
+                <!-- 頁面內容將通過 JavaScript 動態載入 -->
+            </div>
+        </div>
+    </div>
+    <!-- 全局載入中遮罩 -->
+    <div class="loading-bg" id="loading-bg" style="position: fixed; top:0; left:0; right:0; bottom:0; background: rgba(0,0,0,0.45); z-index: 15000; display: none;">
+        <div style="position:absolute; top:50%; left:50%; transform: translate(-50%,-50%); background:#23262f; color:#e5e7eb; padding:16px 22px; border-radius:12px; box-shadow:0 4px 24px #000a; font-size:16px;">
+            載入中...
+        </div>
+    </div>
+    <div class="modal-bg app-modal-overlay" id="modal-bg">
+        <div class="modal app-modal-surface">
+            <div class="modal-title" id="modal-title"></div>
+            <div class="modal-msg" id="modal-msg"></div>
+            <button class="modal-btn" onclick="closeModal()">確定</button>
+        </div>
+    </div>
+    
+    <!-- 確認對話框模態視窗 -->
+    <div class="modal-bg app-modal-overlay" id="confirm-modal-bg">
+        <div class="modal app-modal-surface">
+            <div class="modal-title" id="confirm-modal-title"></div>
+            <div class="modal-msg" id="confirm-modal-msg"></div>
+            <div class="modal-buttons">
+                <button class="modal-btn-secondary" id="confirm-cancel-btn" onclick="closeConfirmModal()">取消</button>
+                <button class="modal-btn" id="confirm-ok-btn" onclick="confirmAction()">確定</button>
+            </div>
+        </div>
+    </div>
+    
+    <div class="modal-bg app-modal-overlay" id="dev-cmd-enable-warn-bg" style="display:none;" onclick="if(event.target===this) closeDevCommandEnableWarningModal(false);">
+        <div class="modal app-modal-surface dev-cmd-warn-modal" role="dialog" aria-modal="true" aria-labelledby="dev-cmd-enable-warn-title" onclick="event.stopPropagation();">
+            <div class="modal-title" id="dev-cmd-enable-warn-title">啟用 Dev Command</div>
+            <div class="modal-msg">此功能為開發者專用的偵錯模式<br>除非您了解此功能的用途，否則不建議開啟</div>
+            <div class="modal-buttons">
+                <button class="modal-btn-secondary" onclick="closeDevCommandEnableWarningModal(false)">取消</button>
+                <button class="modal-btn" onclick="closeDevCommandEnableWarningModal(true)">啟用</button>
+            </div>
+            <div class="dev-cmd-warn-checkbox">
+                <input type="checkbox" id="dev-cmd-warn-never-again">
+                <label for="dev-cmd-warn-never-again">不再顯示此警告</label>
+            </div>
+        </div>
+    </div>
+
+    <div class="playlist-duplicate-overlay app-modal-overlay" id="playlist-duplicate-modal-bg" onclick="if(event.target===this) closePlaylistDuplicateModal();">
+        <div class="playlist-duplicate-dialog app-modal-surface" role="dialog" aria-modal="true" aria-labelledby="playlist-duplicate-title">
+            <div class="playlist-duplicate-head">
+                <h3 class="playlist-duplicate-title" id="playlist-duplicate-title">偵測到已下載內容</h3>
+                <button class="playlist-duplicate-close" onclick="closePlaylistDuplicateModal()">×</button>
+            </div>
+            <div class="playlist-duplicate-body">
+                <p class="playlist-duplicate-summary" id="playlist-duplicate-summary"></p>
+                <div class="playlist-duplicate-list" id="playlist-duplicate-list"></div>
+            </div>
+            <div class="playlist-duplicate-footer">
+                <button class="playlist-duplicate-btn-secondary" onclick="closePlaylistDuplicateModal()">取消</button>
+                <button class="playlist-duplicate-btn-primary" id="playlist-duplicate-confirm-btn">繼續下載</button>
+            </div>
+        </div>
+    </div>
+    <div class="video-modal-bg app-modal-overlay" id="video-modal-bg">
+        <div class="video-modal app-modal-surface" id="video-modal">
+            <div class="video-modal-loading" id="video-modal-loading">載入中...</div>
+            <div id="video-modal-content" style="display:none;">
+                <div class="video-modal-header">
+                    <img class="video-modal-thumb" id="video-modal-thumb" src="assets/icon.png" alt="thumb">
+                    <div class="video-modal-titlebox">
+                        <div class="video-modal-title" id="video-modal-title"></div>
+                        <div class="video-modal-meta" id="video-modal-meta"></div>
+                    </div>
+                </div>
+                <div class="video-modal-options">
+                    <div class="video-modal-options-wrapper">
+                        <div class="video-modal-option-item">
+                            <div class="video-modal-label" id="video-modal-quality-label">畫質</div>
+                            <div class="custom-select" id="quality-select">
+                                <div class="custom-select-header" onclick="toggleSelect('quality-select')">
+                                    <span class="custom-select-text">請選擇畫質</span>
+                                    <div class="custom-select-arrow"></div>
+                                </div>
+                                <div class="custom-select-options" id="quality-options"></div>
+                            </div>
+                        </div>
+                        <div class="video-modal-option-item">
+                            <div class="video-modal-label">影片格式</div>
+                            <div class="custom-select" id="format-select">
+                                <div class="custom-select-header" onclick="toggleSelect('format-select')">
+                                    <span class="custom-select-text">請選擇格式</span>
+                                    <div class="custom-select-arrow"></div>
+                                </div>
+                                <div class="custom-select-options" id="format-options"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="video-modal-actions">
+                    <button class="video-modal-btn cancel" onclick="closeVideoModal()">取消</button>
+                    <button class="video-modal-btn" onclick="confirmDownload()">下載</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 播放清單選擇模態視窗 -->
+    <div class="playlist-modal-bg app-modal-overlay" id="playlist-modal-bg">
+        <div class="playlist-modal app-modal-surface">
+            <div class="playlist-modal-header">
+                <div>
+                    <div class="playlist-modal-title" id="playlist-modal-title">播放清單</div>
+                    <div class="playlist-modal-subtitle" id="playlist-modal-subtitle">共 0 部影片</div>
+                </div>
+                <button class="playlist-modal-close" onclick="closePlaylistModal()">×</button>
+            </div>
+            <div class="playlist-modal-toolbar">
+                <label class="playlist-toolbar-check">
+                    <input type="checkbox" id="playlist-select-all" onchange="onPlaylistSelectAllChanged(this.checked)">
+                    全選
+                </label>
+                <label class="playlist-toolbar-check">
+                    <input type="checkbox" id="playlist-apply-highest-quality" onchange="onPlaylistApplyHighestQualityChanged(this.checked)">
+                    套用最高畫質/位元率
+                </label>
+                <div class="playlist-toolbar-select" id="playlist-global-format-card">
+                    <div class="playlist-toolbar-select-label">影片格式(一次套用至所有)</div>
+                    <div class="custom-select" id="playlist-global-format-select">
+                        <div class="custom-select-header" onclick="togglePlaylistGlobalFormatSelect()">
+                            <span class="custom-select-text">-請選擇影片格式-</span>
+                            <div class="custom-select-arrow"></div>
+                        </div>
+                        <div class="custom-select-options" id="playlist-global-format-options">
+                            <div class="custom-select-option" onclick="selectPlaylistGlobalFormatOption('')">-請選擇影片格式-</div>
+                            <div class="custom-select-option" onclick="selectPlaylistGlobalFormatOption('mp4')">影片(mp4)</div>
+                            <div class="custom-select-option" onclick="selectPlaylistGlobalFormatOption('mp3')">音訊(mp3)</div>
+                            <div class="custom-select-option" onclick="selectPlaylistGlobalFormatOption('individual')">個別選擇格式</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="playlist-modal-content" id="playlist-modal-content">
+                <!-- 播放清單影片列表將在這裡動態生成 -->
+            </div>
+            <div class="playlist-modal-footer">
+                <div class="playlist-selected-count" id="playlist-selected-count">已選擇 0 部影片</div>
+                <button class="playlist-download-btn" id="playlist-download-btn" onclick="startPlaylistDownload()" disabled>開始下載</button>
+            </div>
+        </div>
+    </div>
+    <script>
+        // 重定向 console 輸出到 Python 端（僅保留必要等級）
+        (function() {
+            // 預設只顯示必要訊息：warn/error（可改為 info/debug 以開啟更多訊息）
+            const CONSOLE_MIN_LEVEL = 'warn';
+            const levelPriority = { debug: 10, info: 20, log: 20, warn: 30, error: 40 };
+            const minPriority = levelPriority[CONSOLE_MIN_LEVEL] || levelPriority.warn;
+
+            // 保存原始的 console 方法
+            const originalConsole = {
+                log: console.log.bind(console),
+                error: console.error.bind(console),
+                warn: console.warn.bind(console),
+                info: console.info.bind(console),
+                debug: console.debug.bind(console)
+            };
+            
+            // 創建發送日誌到 Python 的函數
+            function sendLogToPython(level, args) {
+                try {
+                    // 將參數轉換為字符串
+                    const message = Array.from(args).map(arg => {
+                        if (typeof arg === 'object') {
+                            try {
+                                return JSON.stringify(arg);
+                            } catch (e) {
+                                return String(arg);
+                            }
+                        }
+                        return String(arg);
+                    }).join(' ');
+                    
+                    // 嘗試發送到 Python 端
+                    if (window.api && typeof window.api.log_from_js === 'function') {
+                        window.api.log_from_js(level, message).catch(err => {
+                            // 如果發送失敗，至少保留原生輸出
+                            originalConsole.error('[日誌發送失敗]', err);
+                        });
+                    }
+                } catch (e) {
+                    // 如果出錯，至少保留原生輸出
+                    originalConsole.error('[日誌重定向錯誤]', e);
+                }
+            }
+            
+            function shouldOutput(level) {
+                return (levelPriority[level] || 0) >= minPriority;
+            }
+
+            // 重寫 console 方法
+            console.log = function(...args) {
+                if (!shouldOutput('log')) return;
+                originalConsole.log(...args);
+                sendLogToPython('log', args);
+            };
+            
+            console.error = function(...args) {
+                originalConsole.error(...args);
+                sendLogToPython('error', args);
+            };
+            
+            console.warn = function(...args) {
+                if (!shouldOutput('warn')) return;
+                originalConsole.warn(...args);
+                sendLogToPython('warn', args);
+            };
+            
+            console.info = function(...args) {
+                if (!shouldOutput('info')) return;
+                originalConsole.info(...args);
+                sendLogToPython('info', args);
+            };
+            
+            console.debug = function(...args) {
+                if (!shouldOutput('debug')) return;
+                originalConsole.debug(...args);
+                sendLogToPython('debug', args);
+            };
+        })();
+
+        // 全局錯誤處理
+        window.onerror = function(message, source, lineno, colno, error) {
+            console.error('[全局錯誤]', message, 'at', source + ':' + lineno + ':' + colno, error);
+        };
+
+        window.addEventListener('unhandledrejection', function(event) {
+            console.error('[未處理的 Promise 拒絕]', event.reason);
+        });
+
+        // 檢查關鍵函數是否存在
+        // 添加全局錯誤處理和調試信息
+        window.addEventListener('error', function(e) {
+            console.error('[全局錯誤]', e.message, 'at', e.filename, ':', e.lineno, ':', e.colno);
+            console.error('[錯誤堆棧]', e.error ? e.error.stack : '無堆棧信息');
+        });
+
+        /**
+         * 顯示確認對話框
+         */
+        window.showConfirmModal = function(title, message, onConfirm) {
+            const modal = document.getElementById('confirm-modal-bg');
+            document.getElementById('confirm-modal-title').innerText = title;
+            document.getElementById('confirm-modal-msg').innerHTML = message;
+            
+            // 存儲確認回調函數
+            window._confirmCallback = onConfirm;
+            
+            openPopupOverlay(modal);
+        };
+        
+        /**
+         * 關閉確認對話框
+         */
+        window.closeConfirmModal = function() {
+            const modal = document.getElementById('confirm-modal-bg');
+            
+            // 如果取消的是文件已存在的確認，需要通知後端取消下載並從佇列中移除任務
+            // 立即執行，不等待動畫完成
+            if (window._pendingTaskId) {
+                const taskId = window._pendingTaskId;
+                delete window._pendingTaskId;
+                
+                // 從前端佇列中移除任務
+                const taskIndex = downloadQueue.findIndex(task => task.id === taskId);
+                if (taskIndex !== -1) {
+                    downloadQueue.splice(taskIndex, 1);
+                    renderQueue(); // 重新渲染佇列
+                    console.log(`已從佇列中移除任務 ${taskId}`);
+                } else {
+                    console.warn(`找不到任務 ${taskId}，可能已經被移除`);
+                }
+                
+                // 通知後端取消下載
+                const backend = __getBackendApi();
+                if (backend && backend.confirm_redownload) {
+                    backend.confirm_redownload(taskId, false)
+                        .then(result => {
+                            console.log("取消下載結果:", result);
+                        })
+                        .catch(error => {
+                            console.error("取消下載時出錯:", error);
+                        });
+                }
+            }
+            
+            closePopupOverlay(modal, () => {
+                window._confirmCallback = null;
+            });
+        }
+        
+        /**
+         * 確認操作
+         */
+        function confirmAction() {
+            if (window._confirmCallback) {
+                window._confirmCallback();
+            }
+            closeConfirmModal();
+        }
+
+    </script>
+</body>
+</html>

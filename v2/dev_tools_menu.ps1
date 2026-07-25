@@ -2,17 +2,18 @@ $ErrorActionPreference = "Stop"
 [Console]::OutputEncoding = [System.Text.Encoding]::UTF8
 
 $root = Split-Path -Parent $MyInvocation.MyCommand.Path
-$mainDir = Join-Path $root "main"
-$pythonExe = Join-Path $mainDir "lib\python_embed\python.exe"
-$mainPyw = Join-Path $mainDir "main.pyw"
+$appDir = Join-Path $root "app"
+$runtimeDir = Join-Path $root "runtime"
+$pythonExe = Join-Path $runtimeDir "lib\python_embed\python.exe"
+$mainPyw = Join-Path $appDir "main.pyw"
 $launcherExe = Join-Path $root "oldfishVDL.exe"
-$ffmpegExe = Join-Path $mainDir "lib\ffmpeg-7.1.1-essentials_build\ffmpeg-7.1.1-essentials_build\bin\ffmpeg.exe"
-$ffprobeExe = Join-Path $mainDir "lib\ffmpeg-7.1.1-essentials_build\ffmpeg-7.1.1-essentials_build\bin\ffprobe.exe"
-$settingsJson = Join-Path $mainDir "main\settings.json"
-$ytCacheJson = Join-Path $mainDir "main\ytdlp_version_cache.json"
-$launcherLog = Join-Path $mainDir "launcher.log"
-$thumbCache = Join-Path $mainDir "thumb_cache"
-$downloadsDir = Join-Path $mainDir "downloads"
+$ffmpegExe = Join-Path $runtimeDir "lib\ffmpeg-7.1.1-essentials_build\ffmpeg-7.1.1-essentials_build\bin\ffmpeg.exe"
+$ffprobeExe = Join-Path $runtimeDir "lib\ffmpeg-7.1.1-essentials_build\ffmpeg-7.1.1-essentials_build\bin\ffprobe.exe"
+$settingsJson = Join-Path $runtimeDir "state\settings.json"
+$ytCacheJson = Join-Path $runtimeDir "state\ytdlp_version_cache.json"
+$launcherLog = Join-Path $runtimeDir "state\launcher.log"
+$thumbCache = Join-Path $runtimeDir "thumb_cache"
+$downloadsDir = Join-Path $runtimeDir "downloads"
 
 if (!(Test-Path -LiteralPath $pythonExe)) {
   Write-Host "[ERROR] Embedded python not found:"
@@ -66,7 +67,7 @@ function Pause-Done { Read-Host "Press Enter to continue" | Out-Null }
 function Confirm-Action([string]$msg) { return (Read-Host $msg) -match "^(?i:y|yes)$" }
 
 function Run-Console([string]$flags) {
-  Push-Location $mainDir
+  Push-Location $appDir
   try {
     Write-Host "[RUN] Console mode $flags"
     if ([string]::IsNullOrWhiteSpace($flags)) { & $pythonExe $mainPyw } else { & $pythonExe $mainPyw $flags }
@@ -78,7 +79,7 @@ function Run-Console([string]$flags) {
 }
 
 function Run-ConsoleDebug {
-  Push-Location $mainDir
+  Push-Location $appDir
   try {
     Write-Host "[RUN] Console mode + DEBUG"
     $env:OLDFISH_LOG_LEVEL = "DEBUG"
@@ -110,7 +111,7 @@ function Run-Launcher([string]$flags) {
 
 function Clean-PyCache {
   Write-Host "[CLEAN] __pycache__ ..."
-  Get-ChildItem -Path $mainDir -Directory -Recurse -Filter "__pycache__" -ErrorAction SilentlyContinue |
+  Get-ChildItem -Path $appDir -Directory -Recurse -Filter "__pycache__" -ErrorAction SilentlyContinue |
     ForEach-Object { Remove-Item -LiteralPath $_.FullName -Recurse -Force -ErrorAction SilentlyContinue }
   Write-Host "[DONE] __pycache__ cleaned."
 }
@@ -148,10 +149,10 @@ function Clean-Downloads {
 }
 
 function Reset-Settings {
-  Push-Location $mainDir
+  Push-Location $appDir
   try {
     Write-Host "[RESET] settings.json (full DEFAULT_SETTINGS from constants.py, e.g. hideDevCommandEnableWarning) ..."
-    & $pythonExe -c "import json, sys; from pathlib import Path; sys.path.insert(0, '.'); from scripts.config.constants import DEFAULT_SETTINGS; p=Path('main') / 'settings.json'; p.parent.mkdir(parents=True, exist_ok=True); p.write_text(json.dumps(DEFAULT_SETTINGS, ensure_ascii=False, indent=2), encoding='utf-8')"
+    & $pythonExe -c "import json, sys; from pathlib import Path; sys.path.insert(0, '.'); from scripts.config.constants import DEFAULT_SETTINGS; p=Path('..') / 'runtime' / 'state' / 'settings.json'; p.parent.mkdir(parents=True, exist_ok=True); p.write_text(json.dumps(DEFAULT_SETTINGS, ensure_ascii=False, indent=2), encoding='utf-8')"
     if ($LASTEXITCODE -ne 0) {
       Write-Host "[ERROR] Failed to reset settings.json"
       return

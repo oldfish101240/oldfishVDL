@@ -68,7 +68,7 @@ void init_log_file(const char* app_path) {
     char log_dir[MAX_PATH] = {0};
     char local_appdata[MAX_PATH] = {0};
 
-    PathCombineA(log_dir, app_path, "main");
+    PathCombineA(log_dir, app_path, "runtime\\state");
     CreateDirectoryA(log_dir, NULL);
     PathCombineA(log_path, log_dir, "launcher.log");
 
@@ -345,11 +345,11 @@ int APIENTRY wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmd
         return 1;
     }
 
-    PathCombineA(temp_path, app_path, "main");
+    PathCombineA(temp_path, app_path, "runtime");
     PathCombineA(temp_path, temp_path, "lib");
     PathCombineA(temp_path, temp_path, "python_embed");
     PathCombineA(pythonw_path, temp_path, "pythonw.exe");
-    PathCombineA(temp_path, app_path, "main");
+    PathCombineA(temp_path, app_path, "app");
     PathCombineA(script_path, temp_path, "main.pyw");
     log_message("INFO", "pythonw path=%s", pythonw_path);
     log_message("INFO", "script path=%s", script_path);
